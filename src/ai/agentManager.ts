@@ -58,15 +58,7 @@ export class AgentManager {
     }
 
     // Create agent in database first
-    const agentId = uuidv4();
-    await this.db.createAgent({
-      id: agentId,
-      userId,
-      name: agentData.name,
-      personality: agentData.personality,
-      workPreferences: [], // No longer needed
-      isActive: true
-    });
+    
 
     // Prepare memory blocks for Letta agent creation
     const memoryBlocks = [{
@@ -87,6 +79,15 @@ export class AgentManager {
       embedding: "openai/text-embedding-3-small",
       memoryBlocks: memoryBlocks,
       blockIds: blockIds // Attach human and optionally project's memory block
+    });
+
+    await this.db.createAgent({
+      id: agent.id || uuidv4(),
+      userId,
+      name: agentData.name,
+      personality: agentData.personality,
+      workPreferences: [], // No longer needed
+      isActive: true
     });
 
     return agent;
@@ -129,7 +130,7 @@ export class AgentManager {
       return null;
     }
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     return aiAgent;
   }
@@ -142,7 +143,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -160,7 +161,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -183,7 +184,7 @@ export class AgentManager {
     const agent = await this.db.getAgentById(agentId);
     if (!agent) return null;
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     
     return aiAgent;
