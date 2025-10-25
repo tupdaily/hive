@@ -35,6 +35,18 @@ class HiveApp {
         document.getElementById('manage-projects-btn').addEventListener('click', () => this.showProjects());
         document.getElementById('manage-memory-btn').addEventListener('click', () => this.showMemory());
         document.getElementById('view-all-agents-btn').addEventListener('click', () => this.showAllAgents());
+        
+        // Letta Cloud sync event listeners
+        document.getElementById('sync-agents-btn').addEventListener('click', () => this.syncAgents());
+        document.getElementById('sync-memory-btn').addEventListener('click', () => this.syncMemory());
+        document.getElementById('sync-all-btn').addEventListener('click', () => this.syncAll());
+        
+        // Letta Cloud project management event listeners
+        document.getElementById('view-projects-btn').addEventListener('click', () => this.viewProjects());
+        document.getElementById('create-project-btn').addEventListener('click', () => this.showCreateProjectModal());
+        document.getElementById('cancel-project-btn').addEventListener('click', () => this.hideCreateProjectModal());
+        document.getElementById('create-project-form').addEventListener('submit', (e) => this.handleCreateProject(e));
+        document.getElementById('open-letta-ade-btn').addEventListener('click', () => this.openLettaADE());
     }
 
     checkAuth() {
@@ -366,6 +378,162 @@ class HiveApp {
 
     async showAllAgents() {
         alert('All agents view coming soon!');
+    }
+
+    // Letta Cloud sync methods
+    async syncAgents() {
+        try {
+            const response = await fetch(`${this.apiBase}/admin/sync/agents`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'Agents synced successfully!');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to sync agents');
+            }
+        } catch (error) {
+            console.error('Error syncing agents:', error);
+            alert('Error syncing agents');
+        }
+    }
+
+    async syncMemory() {
+        try {
+            const response = await fetch(`${this.apiBase}/admin/sync/memory-blocks`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'Memory blocks synced successfully!');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to sync memory blocks');
+            }
+        } catch (error) {
+            console.error('Error syncing memory blocks:', error);
+            alert('Error syncing memory blocks');
+        }
+    }
+
+    async syncAll() {
+        try {
+            const response = await fetch(`${this.apiBase}/admin/sync/all`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'All data synced successfully!');
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to sync all data');
+            }
+        } catch (error) {
+            console.error('Error syncing all data:', error);
+            alert('Error syncing all data');
+        }
+    }
+
+    // Letta Cloud project management methods
+    async viewProjects() {
+        try {
+            const response = await fetch(`${this.apiBase}/admin/letta/projects`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.displayProjects(data.projects);
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to load projects');
+            }
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            alert('Error loading projects');
+        }
+    }
+
+    displayProjects(projects) {
+        const projectsList = document.getElementById('projects-list');
+        projectsList.classList.remove('hidden');
+        
+        if (projects.length === 0) {
+            projectsList.innerHTML = '<p class="text-gray-500 text-sm">No projects found</p>';
+            return;
+        }
+        
+        projectsList.innerHTML = projects.map(project => `
+            <div class="p-2 bg-gray-100 rounded mb-2">
+                <h5 class="font-semibold text-gray-800">${project.name}</h5>
+                <p class="text-sm text-gray-600">${project.description}</p>
+                <p class="text-xs text-gray-500">Created: ${new Date(project.createdAt).toLocaleDateString()}</p>
+            </div>
+        `).join('');
+    }
+
+    showCreateProjectModal() {
+        document.getElementById('create-project-modal').classList.remove('hidden');
+    }
+
+    hideCreateProjectModal() {
+        document.getElementById('create-project-modal').classList.add('hidden');
+        document.getElementById('create-project-form').reset();
+    }
+
+    async handleCreateProject(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('project-name').value;
+        const description = document.getElementById('project-description').value;
+        
+        try {
+            const response = await fetch(`${this.apiBase}/admin/letta/projects`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, description })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message || 'Project created successfully!');
+                this.hideCreateProjectModal();
+                this.viewProjects(); // Refresh projects list
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Failed to create project');
+            }
+        } catch (error) {
+            console.error('Error creating project:', error);
+            alert('Error creating project');
+        }
+    }
+
+    openLettaADE() {
+        // Open Letta ADE in a new tab
+        window.open('https://ade.letta.ai', '_blank');
     }
 }
 

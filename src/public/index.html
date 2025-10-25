@@ -188,6 +188,56 @@
                                 <i class="fas fa-robot mr-2"></i>View All Agents
                             </button>
                         </div>
+                        
+                        <!-- Letta Cloud Integration Section -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Letta Cloud Integration</h3>
+                            <p class="text-sm text-gray-600 mb-2">Connect to Letta Cloud to view and manage your agents in the ADE (Agent Development Environment).</p>
+                            <p class="text-xs text-yellow-600 mb-4" id="letta-status">
+                                <i class="fas fa-info-circle mr-1"></i>Running in mock mode - configure Letta Cloud credentials to enable real sync
+                            </p>
+                            
+                            <!-- Project Management -->
+                            <div class="mb-4 p-3 bg-white rounded border">
+                                <h4 class="font-semibold text-gray-800 mb-2">Project Management</h4>
+                                <div class="space-x-2 mb-2">
+                                    <button id="view-projects-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm">
+                                        <i class="fas fa-list mr-1"></i>View Projects
+                                    </button>
+                                    <button id="create-project-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm">
+                                        <i class="fas fa-plus mr-1"></i>Create Project
+                                    </button>
+                                </div>
+                                <div id="projects-list" class="hidden">
+                                    <!-- Projects will be listed here -->
+                                </div>
+                            </div>
+
+                            <!-- Sync Operations -->
+                            <div class="mb-4 p-3 bg-white rounded border">
+                                <h4 class="font-semibold text-gray-800 mb-2">Sync Operations</h4>
+                                <div class="space-x-2">
+                                    <button id="sync-agents-btn" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                                        <i class="fas fa-sync mr-2"></i>Sync Agents
+                                    </button>
+                                    <button id="sync-memory-btn" class="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded">
+                                        <i class="fas fa-database mr-2"></i>Sync Memory
+                                    </button>
+                                    <button id="sync-all-btn" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded">
+                                        <i class="fas fa-cloud-upload-alt mr-2"></i>Sync All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Letta ADE Access -->
+                            <div class="p-3 bg-blue-50 rounded border border-blue-200">
+                                <h4 class="font-semibold text-blue-800 mb-2">Letta ADE Access</h4>
+                                <p class="text-sm text-blue-700 mb-2">Once synced, you can view and manage your agents in the Letta ADE.</p>
+                                <button id="open-letta-ade-btn" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">
+                                    <i class="fas fa-external-link-alt mr-2"></i>Open Letta ADE
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -195,6 +245,43 @@
     </div>
 
     <!-- Modals -->
+    <!-- Create Project Modal -->
+    <div id="create-project-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Create Letta Cloud Project</h3>
+                    <form id="create-project-form">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="project-name">
+                                Project Name
+                            </label>
+                            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                   id="project-name" type="text" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="project-description">
+                                Description
+                            </label>
+                            <textarea id="project-description" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                      rows="3" 
+                                      placeholder="Describe your project..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" id="cancel-project-btn" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                                Cancel
+                            </button>
+                            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Create Project
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Agent Modal -->
     <div id="create-agent-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
         <div class="flex items-center justify-center min-h-screen p-4">

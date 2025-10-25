@@ -1,19 +1,14 @@
 import { Database } from '../database/connection';
 import { Agent, MemoryBlock, QueryRequest, QueryResponse } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import Anthropic from '@anthropic-ai/sdk';
 
 export class AIAgent {
   private agent: Agent;
   private db: Database;
-  private claude: Anthropic;
 
   constructor(agent: Agent, db: Database) {
     this.agent = agent;
     this.db = db;
-    this.claude = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY || 'mock-key-for-development'
-    });
   }
 
   async query(request: QueryRequest): Promise<QueryResponse> {
@@ -69,7 +64,7 @@ export class AIAgent {
     try {
       // Use Claude for AI responses
       const message = await this.claude.messages.create({
-        model: "claude-3-sonnet-20240229",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 500,
         temperature: 0.7,
         system: `You are an AI assistant for a company team. Based on the following context, answer the user's question helpfully and professionally.
@@ -136,35 +131,6 @@ Please provide a helpful response based on the available information. If you don
     
     await this.db.createMemoryBlock(memoryBlock);
   }
-
-  async addToSharedMemory(content: string, metadata: Record<string, any> = {}): Promise<void> {
-    const memoryBlock: Omit<MemoryBlock, 'createdAt' | 'updatedAt'> = {
-      id: uuidv4(),
-      type: 'shared',
-      content,
-      metadata: {
-        ...metadata,
-        addedBy: this.agent.id,
-        timestamp: new Date().toISOString()
-      }
-    };
-    
-    await this.db.createMemoryBlock(memoryBlock);
-  }
-
-  async addToPersonalMemory(content: string, metadata: Record<string, any> = {}): Promise<void> {
-    const memoryBlock: Omit<MemoryBlock, 'createdAt' | 'updatedAt'> = {
-      id: uuidv4(),
-      type: 'individual',
-      agentId: this.agent.id,
-      content,
-      metadata: {
-        ...metadata,
-        timestamp: new Date().toISOString()
-      }
-    };
-    
-    await this.db.createMemoryBlock(memoryBlock);
   }
 
   getAgent(): Agent {

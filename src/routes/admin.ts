@@ -239,6 +239,52 @@ export const createAdminRoutes = (db: Database, agentManager: AgentManager, auth
     }
   });
 
+  // Letta Cloud project management
+  router.get('/letta/projects', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { LettaCloudService } = await import('../ai/lettaCloud');
+      const lettaCloud = new LettaCloudService();
+      const projects = await lettaCloud.getProjects();
+      res.json({ projects });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch Letta Cloud projects' });
+    }
+  });
+
+  router.post('/letta/projects', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { name, description } = req.body;
+      const { LettaCloudService } = await import('../ai/lettaCloud');
+      const lettaCloud = new LettaCloudService();
+      const project = await lettaCloud.createProject({ name, description });
+      res.json({ message: 'Project created successfully', project });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create Letta Cloud project' });
+    }
+  });
+
+  router.get('/letta/agents', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { LettaCloudService } = await import('../ai/lettaCloud');
+      const lettaCloud = new LettaCloudService();
+      const agents = await lettaCloud.getAgentsFromCloud();
+      res.json({ agents });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch Letta Cloud agents' });
+    }
+  });
+
+  router.get('/letta/memory-blocks', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { LettaCloudService } = await import('../ai/lettaCloud');
+      const lettaCloud = new LettaCloudService();
+      const memoryBlocks = await lettaCloud.getMemoryBlocksFromCloud();
+      res.json({ memoryBlocks });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch Letta Cloud memory blocks' });
+    }
+  });
+
   return router;
 };
 
