@@ -3,7 +3,7 @@ import { Agent, QueryRequest, QueryResponse } from '../types';
 export declare class AIAgent {
     private agent;
     private db;
-    private openai;
+    private claude;
     constructor(agent: Agent, db: Database);
     query(request: QueryRequest): Promise<QueryResponse>;
     private buildContext;

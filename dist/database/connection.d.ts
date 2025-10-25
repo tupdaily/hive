@@ -1,11 +1,10 @@
 import { User, Agent, Project, ProjectMember, MemoryBlock } from '../types';
 export declare class Database {
-    private db;
-    constructor(databasePath: string);
+    private supabase;
+    private initialized;
+    constructor(supabaseUrl: string, supabaseKey: string);
     private initializeDatabase;
-    private run;
-    private get;
-    private all;
+    private waitForInitialization;
     createUser(user: Omit<User, 'createdAt' | 'updatedAt'> & {
         passwordHash: string;
     }): Promise<void>;
@@ -18,7 +17,7 @@ export declare class Database {
     getAgentById(id: string): Promise<Agent | null>;
     getAgentsByUserId(userId: string): Promise<Agent[]>;
     getAllAgents(): Promise<Agent[]>;
-    updateAgent(id: string, updates: Partial<Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void>;
+    updateAgent(id: string, updates: any): Promise<void>;
     createProject(project: Omit<Project, 'createdAt' | 'updatedAt'>): Promise<void>;
     getProjectById(id: string): Promise<Project | null>;
     getAllProjects(): Promise<Project[]>;

@@ -2,34 +2,42 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentManager = void 0;
 const agent_1 = require("./agent");
+const uuid_1 = require("uuid");
+const letta_client_1 = require("@letta-ai/letta-client");
 class AgentManager {
     db;
     agents = new Map();
+    0;
+    client;
     constructor(db) {
         this.db = db;
-    }
-    async initializeAgents() {
-        const agents = await this.db.getAllAgents();
-        for (const agent of agents) {
-            if (agent.isActive) {
-                const aiAgent = new agent_1.AIAgent(agent, this.db);
-                this.agents.set(agent.id, aiAgent);
-            }
-        }
+        this.client = new letta_client_1.LettaClient({
+            token: process.env.LETTA_API_KEY || 'mock-key-for-development'
+        });
     }
     async createAgent(userId, agentData) {
-        const agent = {
-            id: this.generateId(),
+        const agentId = (0, uuid_1.v4)();
+        await this.db.createAgent({
+            id: agentId,
             userId,
             name: agentData.name,
             personality: agentData.personality,
             workPreferences: agentData.workPreferences,
             isActive: true
-        };
-        await this.db.createAgent(agent);
-        const aiAgent = new agent_1.AIAgent(agent, this.db);
-        this.agents.set(agent.id, aiAgent);
-        return aiAgent;
+        });
+        const agent = await this.client.agents.create({
+            model: "anthropic/claude-3-5-sonnet-20241022",
+            embedding: "openai/text-embedding-3-small",
+            memoryBlocks: [{
+                    label: "persona",
+                    value: "I am an agent that helps with the company's needs with the following personality: " + agentData.personality
+                },
+                {
+                    label: "work_preferences",
+                    value: agentData.workPreferences.join(", ")
+                }]
+        });
+        return agent;
     }
     async getAgent(agentId) {
         if (this.agents.has(agentId)) {

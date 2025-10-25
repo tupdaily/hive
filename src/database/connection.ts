@@ -1,98 +1,21 @@
-import sqlite3 from 'sqlite3';
-import { promisify } from 'util';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 import { User, Agent, Project, ProjectMember, MemoryBlock } from '../types';
 
 export class Database {
-  private db: sqlite3.Database;
+  private supabase: SupabaseClient;
   private initialized: boolean = false;
 
-  constructor(databasePath: string) {
-    this.db = new sqlite3.Database(databasePath);
+  constructor(supabaseUrl: string, supabaseKey: string) {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
     this.initializeDatabase();
   }
 
-  private initializeDatabase(): void {
-    // Create tables directly
-    const createUsersTable = `
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT CHECK(role IN ('admin', 'employee')) NOT NULL DEFAULT 'employee',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-    
-    const createAgentsTable = `
-      CREATE TABLE IF NOT EXISTS agents (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        personality TEXT NOT NULL,
-        work_preferences TEXT NOT NULL,
-        is_active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `;
-    
-    const createProjectsTable = `
-      CREATE TABLE IF NOT EXISTS projects (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        status TEXT CHECK(status IN ('active', 'completed', 'paused')) DEFAULT 'active',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-    
-    const createProjectMembersTable = `
-      CREATE TABLE IF NOT EXISTS project_members (
-        id TEXT PRIMARY KEY,
-        project_id TEXT NOT NULL,
-        agent_id TEXT NOT NULL,
-        role TEXT CHECK(role IN ('lead', 'member')) DEFAULT 'member',
-        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-        FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE,
-        UNIQUE(project_id, agent_id)
-      )
-    `;
-    
-    const createMemoryBlocksTable = `
-      CREATE TABLE IF NOT EXISTS memory_blocks (
-        id TEXT PRIMARY KEY,
-        type TEXT CHECK(type IN ('shared', 'individual')) NOT NULL,
-        agent_id TEXT,
-        content TEXT NOT NULL,
-        metadata TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
-      )
-    `;
-    
-    const tables = [createUsersTable, createAgentsTable, createProjectsTable, createProjectMembersTable, createMemoryBlocksTable];
-    let completed = 0;
-    
-    tables.forEach((table, index) => {
-      this.db.run(table, (err) => {
-        if (err) {
-          console.error(`Error creating table ${index + 1}:`, err);
-        }
-        completed++;
-        if (completed === tables.length) {
-          this.initialized = true;
-          console.log('Database initialized successfully');
-        }
-      });
-    });
+  private async initializeDatabase(): Promise<void> {
+    // Supabase tables will be created via SQL migrations
+    // For now, we'll just mark as initialized
+    this.initialized = true;
+    console.log('Database initialized successfully');
   }
 
   private async waitForInitialization(): Promise<void> {
@@ -101,76 +24,73 @@ export class Database {
     }
   }
 
-  private run(sql: string, params: any[] = []): Promise<sqlite3.RunResult> {
-    return new Promise(async (resolve, reject) => {
-      await this.waitForInitialization();
-      this.db.run(sql, params, function(err) {
-        if (err) reject(err);
-        else resolve(this);
-      });
-    });
-  }
-
-  private get(sql: string, params: any[] = []): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      await this.waitForInitialization();
-      this.db.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
-  }
-
-  private all(sql: string, params: any[] = []): Promise<any[]> {
-    return new Promise(async (resolve, reject) => {
-      await this.waitForInitialization();
-      this.db.all(sql, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
-  }
-
   // User operations
   async createUser(user: Omit<User, 'createdAt' | 'updatedAt'> & { passwordHash: string }): Promise<void> {
-    await this.run(
-      'INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-      [user.id, user.email, user.name, user.passwordHash, user.role]
-    );
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('users')
+      .insert({
+        id: user.id || uuidv4(),
+        email: user.email,
+        name: user.name,
+        password_hash: user.passwordHash,
+        role: user.role
+      });
+    
+    if (error) throw error;
   }
 
   async getUserByEmail(email: string): Promise<(User & { passwordHash: string }) | null> {
-    const user = await this.get('SELECT * FROM users WHERE email = ?', [email]);
-    if (!user) return null;
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (error || !data) return null;
     
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      passwordHash: user.password_hash,
-      role: user.role,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at)
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      passwordHash: data.password_hash,
+      role: data.role,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
   }
 
   async getUserById(id: string): Promise<User | null> {
-    const user = await this.get('SELECT * FROM users WHERE id = ?', [id]);
-    if (!user) return null;
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) return null;
     
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at)
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      role: data.role,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
   }
 
   async getAllUsers(): Promise<User[]> {
-    const users = await this.all('SELECT * FROM users ORDER BY created_at DESC');
-    return users.map(user => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(user => ({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -182,31 +102,54 @@ export class Database {
 
   // Agent operations
   async createAgent(agent: Omit<Agent, 'createdAt' | 'updatedAt'>): Promise<void> {
-    await this.run(
-      'INSERT INTO agents (id, user_id, name, personality, work_preferences, is_active) VALUES (?, ?, ?, ?, ?, ?)',
-      [agent.id, agent.userId, agent.name, agent.personality, JSON.stringify(agent.workPreferences), agent.isActive]
-    );
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('agents')
+      .insert({
+        id: agent.id || uuidv4(),
+        user_id: agent.userId,
+        name: agent.name,
+        personality: agent.personality,
+        work_preferences: JSON.stringify(agent.workPreferences),
+        is_active: agent.isActive
+      });
+    
+    if (error) throw error;
   }
 
   async getAgentById(id: string): Promise<Agent | null> {
-    const agent = await this.get('SELECT * FROM agents WHERE id = ?', [id]);
-    if (!agent) return null;
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('agents')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) return null;
     
     return {
-      id: agent.id,
-      userId: agent.user_id,
-      name: agent.name,
-      personality: agent.personality,
-      workPreferences: JSON.parse(agent.work_preferences),
-      isActive: Boolean(agent.is_active),
-      createdAt: new Date(agent.created_at),
-      updatedAt: new Date(agent.updated_at)
+      id: data.id,
+      userId: data.user_id,
+      name: data.name,
+      personality: data.personality,
+      workPreferences: JSON.parse(data.work_preferences),
+      isActive: Boolean(data.is_active),
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
   }
 
   async getAgentsByUserId(userId: string): Promise<Agent[]> {
-    const agents = await this.all('SELECT * FROM agents WHERE user_id = ? ORDER BY created_at DESC', [userId]);
-    return agents.map(agent => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('agents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(agent => ({
       id: agent.id,
       userId: agent.user_id,
       name: agent.name,
@@ -219,8 +162,15 @@ export class Database {
   }
 
   async getAllAgents(): Promise<Agent[]> {
-    const agents = await this.all('SELECT * FROM agents ORDER BY created_at DESC');
-    return agents.map(agent => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('agents')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(agent => ({
       id: agent.id,
       userId: agent.user_id,
       name: agent.name,
@@ -233,59 +183,72 @@ export class Database {
   }
 
   async updateAgent(id: string, updates: any): Promise<void> {
-    const fields = [];
-    const values = [];
+    await this.waitForInitialization();
     
-    if (updates.name !== undefined) {
-      fields.push('name = ?');
-      values.push(updates.name);
-    }
-    if (updates.personality !== undefined) {
-      fields.push('personality = ?');
-      values.push(updates.personality);
-    }
-    if (updates.workPreferences !== undefined) {
-      fields.push('work_preferences = ?');
-      values.push(JSON.stringify(updates.workPreferences));
-    }
-    if (updates.isActive !== undefined) {
-      fields.push('is_active = ?');
-      values.push(updates.isActive);
-    }
+    const updateData: any = {};
     
-    if (fields.length === 0) return;
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.personality !== undefined) updateData.personality = updates.personality;
+    if (updates.workPreferences !== undefined) updateData.work_preferences = JSON.stringify(updates.workPreferences);
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
     
-    fields.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(id);
+    if (Object.keys(updateData).length === 0) return;
     
-    await this.run(`UPDATE agents SET ${fields.join(', ')} WHERE id = ?`, values);
+    updateData.updated_at = new Date().toISOString();
+    
+    const { error } = await this.supabase
+      .from('agents')
+      .update(updateData)
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 
   // Project operations
   async createProject(project: Omit<Project, 'createdAt' | 'updatedAt'>): Promise<void> {
-    await this.run(
-      'INSERT INTO projects (id, name, description, status) VALUES (?, ?, ?, ?)',
-      [project.id, project.name, project.description, project.status]
-    );
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('projects')
+      .insert({
+        id: project.id || uuidv4(),
+        name: project.name,
+        description: project.description,
+        status: project.status
+      });
+    
+    if (error) throw error;
   }
 
   async getProjectById(id: string): Promise<Project | null> {
-    const project = await this.get('SELECT * FROM projects WHERE id = ?', [id]);
-    if (!project) return null;
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) return null;
     
     return {
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      createdAt: new Date(project.created_at),
-      updatedAt: new Date(project.updated_at)
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      status: data.status,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     };
   }
 
   async getAllProjects(): Promise<Project[]> {
-    const projects = await this.all('SELECT * FROM projects ORDER BY created_at DESC');
-    return projects.map(project => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(project => ({
       id: project.id,
       name: project.name,
       description: project.description,
@@ -297,15 +260,29 @@ export class Database {
 
   // Project member operations
   async addProjectMember(member: Omit<ProjectMember, 'joinedAt'>): Promise<void> {
-    await this.run(
-      'INSERT INTO project_members (id, project_id, agent_id, role) VALUES (?, ?, ?, ?)',
-      [member.id, member.projectId, member.agentId, member.role]
-    );
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('project_members')
+      .insert({
+        id: member.id || uuidv4(),
+        project_id: member.projectId,
+        agent_id: member.agentId,
+        role: member.role
+      });
+    
+    if (error) throw error;
   }
 
   async getProjectMembers(projectId: string): Promise<ProjectMember[]> {
-    const members = await this.all('SELECT * FROM project_members WHERE project_id = ?', [projectId]);
-    return members.map(member => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('project_members')
+      .select('*')
+      .eq('project_id', projectId);
+    
+    if (error) throw error;
+    
+    return data.map(member => ({
       id: member.id,
       projectId: member.project_id,
       agentId: member.agent_id,
@@ -315,20 +292,43 @@ export class Database {
   }
 
   async removeProjectMember(projectId: string, agentId: string): Promise<void> {
-    await this.run('DELETE FROM project_members WHERE project_id = ? AND agent_id = ?', [projectId, agentId]);
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('project_members')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('agent_id', agentId);
+    
+    if (error) throw error;
   }
 
   // Memory block operations
   async createMemoryBlock(memory: Omit<MemoryBlock, 'createdAt' | 'updatedAt'>): Promise<void> {
-    await this.run(
-      'INSERT INTO memory_blocks (id, type, agent_id, content, metadata) VALUES (?, ?, ?, ?, ?)',
-      [memory.id, memory.type, memory.agentId || null, memory.content, JSON.stringify(memory.metadata)]
-    );
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('memory_blocks')
+      .insert({
+        id: memory.id || uuidv4(),
+        type: memory.type,
+        agent_id: memory.agentId || null,
+        content: memory.content,
+        metadata: JSON.stringify(memory.metadata)
+      });
+    
+    if (error) throw error;
   }
 
   async getSharedMemoryBlocks(): Promise<MemoryBlock[]> {
-    const blocks = await this.all('SELECT * FROM memory_blocks WHERE type = "shared" ORDER BY created_at DESC');
-    return blocks.map(block => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('memory_blocks')
+      .select('*')
+      .eq('type', 'shared')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(block => ({
       id: block.id,
       type: block.type,
       agentId: block.agent_id,
@@ -340,8 +340,16 @@ export class Database {
   }
 
   async getAgentMemoryBlocks(agentId: string): Promise<MemoryBlock[]> {
-    const blocks = await this.all('SELECT * FROM memory_blocks WHERE agent_id = ? ORDER BY created_at DESC', [agentId]);
-    return blocks.map(block => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('memory_blocks')
+      .select('*')
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(block => ({
       id: block.id,
       type: block.type,
       agentId: block.agent_id,
@@ -353,8 +361,15 @@ export class Database {
   }
 
   async getAllMemoryBlocks(): Promise<MemoryBlock[]> {
-    const blocks = await this.all('SELECT * FROM memory_blocks ORDER BY created_at DESC');
-    return blocks.map(block => ({
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('memory_blocks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(block => ({
       id: block.id,
       type: block.type,
       agentId: block.agent_id,
@@ -366,6 +381,8 @@ export class Database {
   }
 
   close(): void {
-    this.db.close();
+    // Supabase client doesn't need explicit closing
+    // but we can mark as not initialized
+    this.initialized = false;
   }
 }

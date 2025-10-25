@@ -5,16 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIAgent = void 0;
 const uuid_1 = require("uuid");
-const openai_1 = __importDefault(require("openai"));
+const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 class AIAgent {
     agent;
     db;
-    openai;
+    claude;
     constructor(agent, db) {
         this.agent = agent;
         this.db = db;
-        this.openai = new openai_1.default({
-            apiKey: process.env.OPENAI_API_KEY || 'mock-key-for-development'
+        this.claude = new sdk_1.default({
+            apiKey: process.env.ANTHROPIC_API_KEY || 'mock-key-for-development'
         });
     }
     async query(request) {
@@ -52,30 +52,27 @@ class AIAgent {
     }
     async generateResponse(query, context) {
         try {
-            const completion = await this.openai.chat.completions.create({
-                model: "gpt-3.5-turbo",
-                messages: [
-                    {
-                        role: "system",
-                        content: `You are an AI assistant for a company team. Based on the following context, answer the user's question helpfully and professionally.
+            const message = await this.claude.messages.create({
+                model: "claude-3-sonnet-20240229",
+                max_tokens: 500,
+                temperature: 0.7,
+                system: `You are an AI assistant for a company team. Based on the following context, answer the user's question helpfully and professionally.
 
 Context:
 ${context}
 
-Please provide a helpful response based on the available information. If you don't have enough information, say so and suggest what additional information might be helpful.`
-                    },
+Please provide a helpful response based on the available information. If you don't have enough information, say so and suggest what additional information might be helpful.`,
+                messages: [
                     {
                         role: "user",
                         content: query
                     }
-                ],
-                max_tokens: 500,
-                temperature: 0.7
+                ]
             });
-            return completion.choices[0]?.message?.content || 'I apologize, but I could not generate a response at this time.';
+            return message.content[0]?.type === 'text' ? message.content[0].text : 'I apologize, but I could not generate a response at this time.';
         }
         catch (error) {
-            console.error('OpenAI API error:', error);
+            console.error('Claude API error:', error);
             return this.generateMockResponse(query, context);
         }
     }

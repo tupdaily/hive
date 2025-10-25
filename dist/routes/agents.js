@@ -39,7 +39,7 @@ const createAgentRoutes = (agentManager, authService) => {
             });
             res.status(201).json({
                 message: 'Agent created successfully',
-                agent: agent.getAgent()
+                agent: agent
             });
         }
         catch (error) {

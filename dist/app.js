@@ -22,7 +22,12 @@ class App {
     agentManager;
     constructor() {
         this.app = (0, express_1.default)();
-        this.db = new connection_1.Database(process.env.DATABASE_URL || './data/hive.db');
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+            throw new Error('Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY');
+        }
+        this.db = new connection_1.Database(supabaseUrl, supabaseKey);
         this.authService = new auth_1.AuthService(this.db, process.env.JWT_SECRET || 'fallback-secret');
         this.agentManager = new agentManager_1.AgentManager(this.db);
         this.setupMiddleware();
@@ -62,7 +67,6 @@ class App {
     }
     async initialize() {
         try {
-            await this.agentManager.initializeAgents();
             console.log('Application initialized successfully');
         }
         catch (error) {

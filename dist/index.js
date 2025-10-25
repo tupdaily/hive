@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = require("./app");
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 async function startServer() {
     try {
         const app = new app_1.App();

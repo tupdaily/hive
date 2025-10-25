@@ -20,7 +20,16 @@ export class App {
 
   constructor() {
     this.app = express();
-    this.db = new Database(process.env.DATABASE_URL || './data/hive.db');
+    
+    // Initialize Supabase database
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY');
+    }
+    
+    this.db = new Database(supabaseUrl, supabaseKey);
     this.authService = new AuthService(this.db, process.env.JWT_SECRET || 'fallback-secret');
     this.agentManager = new AgentManager(this.db);
     
@@ -80,7 +89,7 @@ export class App {
 
   async initialize(): Promise<void> {
     try {
-      await this.agentManager.initializeAgents();
+      // Initialize any required services here
       console.log('Application initialized successfully');
     } catch (error) {
       console.error('Failed to initialize application:', error);

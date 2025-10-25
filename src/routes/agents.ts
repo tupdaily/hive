@@ -48,7 +48,7 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
 
       res.status(201).json({
         message: 'Agent created successfully',
-        agent: agent.getAgent()
+        agent: agent
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

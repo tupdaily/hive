@@ -1,46 +1,54 @@
 import { Database } from '../database/connection';
 import { AIAgent } from './agent';
 import { Agent, User } from '../types';
-
+import { v4 as uuidv4 } from 'uuid';
+import { LettaClient } from '@letta-ai/letta-client';
 export class AgentManager {
   private db: Database;
-  private agents: Map<string, AIAgent> = new Map();
+  private agents: Map<string, AIAgent> = new Map();0
+  private client: LettaClient;
 
   constructor(db: Database) {
     this.db = db;
+    this.client = new LettaClient({
+      token: process.env.LETTA_API_KEY || 'mock-key-for-development'
+    });
   }
 
-  async initializeAgents(): Promise<void> {
-    const agents = await this.db.getAllAgents();
-    
-    for (const agent of agents) {
-      if (agent.isActive) {
-        const aiAgent = new AIAgent(agent, this.db);
-        this.agents.set(agent.id, aiAgent);
-      }
-    }
-  }
+  
 
   async createAgent(userId: string, agentData: {
     name: string;
     personality: string;
     workPreferences: string[];
-  }): Promise<AIAgent> {
-    const agent: Omit<Agent, 'createdAt' | 'updatedAt'> = {
-      id: this.generateId(),
+  }) {
+    // Create agent in database first
+    const agentId = uuidv4();
+    await this.db.createAgent({
+      id: agentId,
       userId,
       name: agentData.name,
       personality: agentData.personality,
       workPreferences: agentData.workPreferences,
       isActive: true
-    };
+    });
 
-    await this.db.createAgent(agent);
-    
-    const aiAgent = new AIAgent(agent as Agent, this.db);
-    this.agents.set(agent.id, aiAgent);
-    
-    return aiAgent;
+    // Create agent in Letta
+    const agent = await this.client.agents.create({
+      model: "anthropic/claude-3-5-sonnet-20241022",
+      embedding: "openai/text-embedding-3-small",
+      
+      memoryBlocks: [{ 
+        label: "persona", 
+        value: "I am an agent that helps with the company's needs with the following personality: " + agentData.personality 
+      }, 
+      { 
+        label: "work_preferences", 
+        value: agentData.workPreferences.join(", ") 
+      }]
+    });
+
+    return agent;
   }
 
   async getAgent(agentId: string): Promise<AIAgent | null> {
