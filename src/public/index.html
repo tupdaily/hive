@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hive AI Team</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-blue-600 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i class="fas fa-robot text-2xl mr-3"></i>
+                        <h1 class="text-xl font-bold">Hive AI Team</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="user-info" class="hidden"></span>
+                        <button id="login-btn" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </button>
+                        <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded hidden">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Login Form -->
+            <div id="login-form" class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold text-center mb-6">Welcome to Hive AI Team</h2>
+                <form id="login-form-element">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                            Email
+                        </label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               id="email" type="email" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                            Password
+                        </label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               id="password" type="password" required>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                                type="submit">
+                            Sign In
+                        </button>
+                        <button id="show-register" class="text-blue-500 hover:text-blue-700 font-bold" type="button">
+                            Register
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Register Form -->
+                <form id="register-form" class="hidden">
+                    <h3 class="text-xl font-bold mb-4">Create Account</h3>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="reg-name">
+                            Name
+                        </label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               id="reg-name" type="text" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="reg-email">
+                            Email
+                        </label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               id="reg-email" type="email" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="reg-password">
+                            Password
+                        </label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               id="reg-password" type="password" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="reg-role">
+                            Role
+                        </label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                id="reg-role" required>
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                                type="submit">
+                            Create Account
+                        </button>
+                        <button id="show-login" class="text-blue-500 hover:text-blue-700 font-bold" type="button">
+                            Back to Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dashboard -->
+            <div id="dashboard" class="hidden">
+                <!-- Agent Management -->
+                <div class="mb-8">
+                    <div class="bg-white shadow rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-gray-900">My AI Agents</h2>
+                            <button id="create-agent-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-plus mr-2"></i>Create Agent
+                            </button>
+                        </div>
+                        <div id="agents-list" class="space-y-4">
+                            <!-- Agents will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Query Interface -->
+                <div class="mb-8">
+                    <div class="bg-white shadow rounded-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Query Your Agent</h2>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-select">
+                                Select Agent
+                            </label>
+                            <select id="agent-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Choose an agent...</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="query-input">
+                                Your Question
+                            </label>
+                            <textarea id="query-input" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                      rows="3" 
+                                      placeholder="Ask your agent about projects, team members, or company information..."></textarea>
+                        </div>
+                        <button id="query-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            <i class="fas fa-paper-plane mr-2"></i>Send Query
+                        </button>
+                        <div id="query-response" class="mt-4 p-4 bg-gray-50 rounded-md hidden">
+                            <!-- Response will be shown here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Panel (only for admins) -->
+                <div id="admin-panel" class="hidden">
+                    <div class="bg-white shadow rounded-lg p-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Admin Panel</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-100 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-blue-800">Total Users</h3>
+                                <p id="total-users" class="text-2xl font-bold text-blue-600">-</p>
+                            </div>
+                            <div class="bg-green-100 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-green-800">Total Agents</h3>
+                                <p id="total-agents" class="text-2xl font-bold text-green-600">-</p>
+                            </div>
+                            <div class="bg-purple-100 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-purple-800">Active Projects</h3>
+                                <p id="active-projects" class="text-2xl font-bold text-purple-600">-</p>
+                            </div>
+                            <div class="bg-orange-100 p-4 rounded-lg">
+                                <h3 class="text-lg font-semibold text-orange-800">Memory Blocks</h3>
+                                <p id="memory-blocks" class="text-2xl font-bold text-orange-600">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <button id="manage-projects-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                                <i class="fas fa-project-diagram mr-2"></i>Manage Projects
+                            </button>
+                            <button id="manage-memory-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2">
+                                <i class="fas fa-brain mr-2"></i>Manage Memory
+                            </button>
+                            <button id="view-all-agents-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-robot mr-2"></i>View All Agents
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Agent Modal -->
+    <div id="create-agent-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Agent</h3>
+                    <form id="create-agent-form">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-name">
+                                Agent Name
+                            </label>
+                            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                   id="agent-name" type="text" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-personality">
+                                Personality
+                            </label>
+                            <textarea id="agent-personality" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                      rows="3" 
+                                      placeholder="Describe the agent's personality and communication style..."></textarea>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-preferences">
+                                Work Preferences (comma-separated)
+                            </label>
+                            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                   id="agent-preferences" type="text" 
+                                   placeholder="e.g., frontend development, data analysis, project management">
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" id="cancel-create-agent" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                Cancel
+                            </button>
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Create Agent
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
