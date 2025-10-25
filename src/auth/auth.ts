@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { Database } from '../database/connection';
 import { User } from '../types';
 
@@ -93,6 +94,6 @@ export class AuthService {
   }
 
   private generateId(): string {
-    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    return uuidv4();
   }
 }

@@ -93,9 +93,59 @@ CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
 CREATE TRIGGER update_memory_blocks_updated_at BEFORE UPDATE ON memory_blocks
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Enable Row Level Security (RLS) - optional but recommended
--- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE project_members ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE memory_blocks ENABLE ROW LEVEL SECURITY;
+-- Enable Row Level Security (RLS)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memory_blocks ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for users table
+CREATE POLICY "Users can view their own data" ON users
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own data" ON users
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update their own data" ON users
+    FOR UPDATE USING (true);
+
+-- Create policies for agents table
+CREATE POLICY "Users can view their own agents" ON agents
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert their own agents" ON agents
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update their own agents" ON agents
+    FOR UPDATE USING (true);
+
+-- Create policies for projects table
+CREATE POLICY "Users can view all projects" ON projects
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert projects" ON projects
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update projects" ON projects
+    FOR UPDATE USING (true);
+
+-- Create policies for project_members table
+CREATE POLICY "Users can view project members" ON project_members
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert project members" ON project_members
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update project members" ON project_members
+    FOR UPDATE USING (true);
+
+-- Create policies for memory_blocks table
+CREATE POLICY "Users can view memory blocks" ON memory_blocks
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert memory blocks" ON memory_blocks
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can update memory blocks" ON memory_blocks
+    FOR UPDATE USING (true);

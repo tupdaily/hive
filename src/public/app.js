@@ -44,8 +44,13 @@ class HiveApp {
         if (this.token && this.user) {
             // Check if user has completed questionnaire
             try {
-                const response = await this.apiCall('/auth/profile', 'GET');
-                if (response.user && !response.user.hasDescription) {
+                const response = await fetch(`${this.apiBase}/auth/profile`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                const data = await response.json();
+                
+                if (data.user && !data.user.hasDescription) {
                     this.showQuestionnaire();
                 } else {
                     this.showDashboard();
@@ -111,8 +116,26 @@ class HiveApp {
                 this.user = data.user;
                 localStorage.setItem('token', this.token);
                 localStorage.setItem('user', JSON.stringify(this.user));
-                this.showDashboard();
-                this.loadUserData();
+                
+                // Check if user needs to complete questionnaire
+                try {
+                    const profileResponse = await fetch(`${this.apiBase}/auth/profile`, {
+                        method: 'GET',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    const profileData = await profileResponse.json();
+                    
+                    if (profileData.user && !profileData.user.hasDescription) {
+                        this.showQuestionnaire();
+                    } else {
+                        this.showDashboard();
+                        this.loadUserData();
+                    }
+                } catch (error) {
+                    console.error('Error checking user profile:', error);
+                    this.showDashboard();
+                    this.loadUserData();
+                }
             } else {
                 this.showError(data.error);
             }
@@ -126,10 +149,24 @@ class HiveApp {
         const description = document.getElementById('user-description').value;
         
         try {
-            const response = await this.apiCall('/auth/questionnaire', 'POST', { description });
-            this.showSuccess('Questionnaire submitted successfully!');
-            this.showDashboard();
-            this.loadUserData();
+            const response = await fetch(`${this.apiBase}/auth/questionnaire`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({ description })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.showSuccess('Questionnaire submitted successfully!');
+                this.showDashboard();
+                this.loadUserData();
+            } else {
+                this.showError(data.error || 'Failed to submit questionnaire. Please try again.');
+            }
         } catch (error) {
             this.showError('Failed to submit questionnaire. Please try again.');
         }

@@ -24,7 +24,9 @@ export const createAuthRoutes = (authService: AuthService, db: any) => {
 
   router.post('/register', async (req: Request, res: Response) => {
     try {
+      console.log('Registration request body:', req.body);
       const { email, password, name, role } = registerSchema.parse(req.body);
+      console.log('Parsed registration data:', { email, name, role });
       
       const result = await authService.register(email, password, name, role);
       
@@ -34,6 +36,7 @@ export const createAuthRoutes = (authService: AuthService, db: any) => {
         token: result.token
       });
     } catch (error) {
+      console.error('Registration error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid input', details: error.errors });
       }
