@@ -3,6 +3,8 @@ import { AIAgent } from './agent';
 import { Agent, User } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { LettaClient } from '@letta-ai/letta-client';
+import { Project } from '../types';
+
 export class AgentManager {
   private db: Database;
   private agents: Map<string, AIAgent> = new Map();0
@@ -10,6 +12,7 @@ export class AgentManager {
 
   constructor(db: Database) {
     this.db = db;
+    console.log("LETTA_API_KEY being used by AgentManager:", process.env.LETTA_API_KEY);
     this.client = new LettaClient({
       token: process.env.LETTA_API_KEY || 'mock-key-for-development'
     });
@@ -21,6 +24,7 @@ export class AgentManager {
     name: string;
     personality: string;
     description: string; // What the user wants the agent to do
+    projectId?: string; // Optional project ID to link to a shared memory block
   }) {
     // Get user to check if they have a memory block
     const user = await this.db.getUserById(userId);
@@ -34,23 +38,23 @@ export class AgentManager {
     if (!userMemoryBlockId) {
       const userMemoryBlock = await this.client.blocks.create({
         label: user.email || user.id,
-        value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`
+        value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`,
+        description: "Stores key details about the person you are conversing with, allowing for more personalized and friend-like conversation."
       });
       userMemoryBlockId = userMemoryBlock.id;
       
       // Update user with memory block ID
       await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
-    } else {
-      // For now, we'll create a new memory block and update the user's reference
-      // In a production app, you might want to implement block updates
-      const newUserMemoryBlock = await this.client.blocks.create({
-        label: user.email || user.id,
-        value: `User: ${user.name} (${user.email})\nDescription: ${user.description || 'No description provided'}`
-      });
-      userMemoryBlockId = newUserMemoryBlock.id;
-      
-      // Update user with new memory block ID
-      await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
+    }
+
+    // Handle project memory block if projectId is provided
+    let projectMemoryBlockId: string | undefined;
+    if (agentData.projectId) {
+      const project = await this.db.getProjectById(agentData.projectId);
+      if (!project) {
+        throw new Error('Project not found');
+      }
+      projectMemoryBlockId = project.memoryBlockId;
     }
 
     // Create agent in database first
@@ -64,19 +68,55 @@ export class AgentManager {
       isActive: true
     });
 
-    // Create agent in Letta with persona and user memory block
+    // Prepare memory blocks for Letta agent creation
+    const memoryBlocks = [{
+      label: "persona", 
+      value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`,
+      description: "Stores details about your current persona, guiding how you behave and respond. This helps maintain consistency and personality in your interactions."
+    }];
+
+    const blockIds = [userMemoryBlockId];
+
+    if (projectMemoryBlockId) {
+      blockIds.push(projectMemoryBlockId);
+    }
+
+    // Create agent in Letta with persona, human, and optionally project memory block
     const agent = await this.client.agents.create({
-      model: "anthropic/claude-3-5-sonnet-20241022",
+      model: "openai/gpt-4.1",
       embedding: "openai/text-embedding-3-small",
-      
-      memoryBlocks: [{ 
-        label: "persona", 
-        value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`
-      }],
-      blockIds: [userMemoryBlockId] // Attach user's memory block
+      memoryBlocks: memoryBlocks,
+      blockIds: blockIds // Attach human and optionally project's memory block
     });
 
     return agent;
+  }
+
+  async createProjectWithSharedMemory(projectData: {
+    name: string;
+    description: string;
+    status: 'active' | 'completed' | 'paused';
+  }): Promise<Project> {
+    // Create a Letta memory block for the project
+    const projectMemoryBlock = await this.client.blocks.create({
+      label: projectData.name,
+      value: `Project Name: ${projectData.name}\nDescription: ${projectData.description}\nStatus: ${projectData.status}`,
+      description: "Stores project context and progress. This memory block is shared across all agents working on this project."
+    });
+
+    // Create project in database with the new memory block ID
+    const projectId = uuidv4();
+    const newProject: Project = {
+      id: projectId,
+      name: projectData.name,
+      description: projectData.description,
+      status: projectData.status,
+      memoryBlockId: projectMemoryBlock.id,
+      createdAt: new Date(), // These will be overwritten by DB, but good for typing
+      updatedAt: new Date()  // These will be overwritten by DB, but good for typing
+    };
+    await this.db.createProject(newProject);
+    return newProject;
   }
 
   async getAgent(agentId: string): Promise<AIAgent | null> {

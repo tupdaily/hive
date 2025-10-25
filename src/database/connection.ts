@@ -250,7 +250,8 @@ export class Database {
         id: project.id || uuidv4(),
         name: project.name,
         description: project.description,
-        status: project.status
+        status: project.status,
+        memory_block_id: project.memoryBlockId || null
       });
     
     if (error) throw error;
@@ -271,6 +272,7 @@ export class Database {
       name: data.name,
       description: data.description,
       status: data.status,
+      memoryBlockId: data.memory_block_id,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -290,9 +292,23 @@ export class Database {
       name: project.name,
       description: project.description,
       status: project.status,
+      memoryBlockId: project.memory_block_id,
       createdAt: new Date(project.created_at),
       updatedAt: new Date(project.updated_at)
     }));
+  }
+
+  async updateProjectMemoryBlock(projectId: string, memoryBlockId: string): Promise<void> {
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('projects')
+      .update({
+        memory_block_id: memoryBlockId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', projectId);
+    
+    if (error) throw error;
   }
 
   // Project member operations

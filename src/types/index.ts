@@ -25,6 +25,7 @@ export interface Project {
   name: string;
   description: string;
   status: 'active' | 'completed' | 'paused';
+  memoryBlockId?: string; // Add this line
   createdAt: Date;
   updatedAt: Date;
 }
