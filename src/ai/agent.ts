@@ -5,9 +5,11 @@ import { LettaClient } from '@letta-ai/letta-client';
 export class AIAgent {
   private agent: Agent;
   private client: LettaClient;
+  private db: Database;
 
-  constructor(agent: Agent) {
+  constructor(agent: Agent, db: Database) {
     this.agent = agent;
+    this.db = db;
     this.client = new LettaClient({
       token: process.env.LETTA_API_KEY || 'mock-key-for-development'
     });
