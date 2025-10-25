@@ -4,6 +4,7 @@ class HiveApp {
         this.token = localStorage.getItem('token');
         this.user = JSON.parse(localStorage.getItem('user') || 'null');
         this.agents = [];
+        this.selectedAgentId = null;
         
         this.init();
     }
@@ -35,7 +36,13 @@ class HiveApp {
         document.getElementById('chat-form').addEventListener('submit', (e) => this.handleChatSubmit(e));
         
         // Auto-resize textarea
-        document.getElementById('chat-input').addEventListener('input', (e) => this.autoResizeTextarea(e));
+        document.getElementById('chat-input').addEventListener('input', (e) => {
+            this.autoResizeTextarea(e);
+        });
+        
+        // Handle focus events
+        document.getElementById('chat-input').addEventListener('focus', (e) => this.handleChatInputFocus(e));
+        document.getElementById('chat-input').addEventListener('blur', (e) => this.handleChatInputBlur(e));
     }
 
     async checkAuth() {
@@ -56,8 +63,8 @@ class HiveApp {
                 }
             } catch (error) {
                 console.error('Error checking user profile:', error);
-                this.showDashboard();
-                this.loadUserData();
+            this.showDashboard();
+            this.loadUserData();
             }
         } else {
             this.showLogin();
@@ -131,8 +138,8 @@ class HiveApp {
                     }
                 } catch (error) {
                     console.error('Error checking user profile:', error);
-                    this.showDashboard();
-                    this.loadUserData();
+                this.showDashboard();
+                this.loadUserData();
                 }
             } else {
                 this.showError(data.error);
@@ -179,16 +186,16 @@ class HiveApp {
         // For now, show placeholder projects
         const projectsList = document.getElementById('projects-list');
         projectsList.innerHTML = `
-            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
                 <i class="fas fa-project-diagram mr-2"></i>E-commerce Platform
             </div>
-            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
                 <i class="fas fa-mobile-alt mr-2"></i>Mobile App
             </div>
-            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
                 <i class="fas fa-database mr-2"></i>Data Analytics
             </div>
-            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium">
+            <div class="project-button p-3 text-center text-gray-800 font-medium">
                 <i class="fas fa-plus mr-2"></i>Create New Project
             </div>
         `;
@@ -218,17 +225,45 @@ class HiveApp {
             return;
         }
 
-        agentsSidebar.innerHTML = this.agents.map(agent => `
-            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300" 
-                 onclick="app.selectAgent('${agent.id}')">
-                <i class="fas fa-robot mr-2"></i>${agent.name}
-            </div>
-        `).join('');
+        agentsSidebar.innerHTML = this.agents.map(agent => {
+            const isSelected = agent.id === this.selectedAgentId;
+            const selectedClass = isSelected ? 'ring-2 ring-yellow-400 bg-yellow-200' : '';
+            
+            return `
+                <div class="project-button p-3 text-center text-gray-800 font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedClass}" 
+                     onclick="app.selectAgent('${agent.id}')">
+                    <i class="fas fa-bee mr-2"></i>${agent.name}
+                </div>
+            `;
+        }).join('');
     }
 
     selectAgent(agentId) {
-        // For now, just show a message
-        this.addMessageToChat(`Selected agent: ${this.agents.find(a => a.id === agentId)?.name || 'Unknown'}`, 'assistant');
+        // Set the selected agent as active
+        this.selectedAgentId = agentId;
+        const agent = this.agents.find(a => a.id === agentId);
+        
+        if (agent) {
+            this.addMessageToChat(`Switched to ${agent.name}. How can I help you?`, 'assistant');
+            
+            // Update visual indication of selected agent
+            this.updateAgentSelection();
+        }
+    }
+
+    updateAgentSelection() {
+        // Update the visual indication of which agent is selected
+        const agentButtons = document.querySelectorAll('#agents-sidebar .project-button');
+        agentButtons.forEach(button => {
+            button.classList.remove('ring-2', 'ring-yellow-400', 'bg-yellow-200');
+        });
+
+        if (this.selectedAgentId) {
+            const selectedButton = document.querySelector(`[onclick="app.selectAgent('${this.selectedAgentId}')"]`);
+            if (selectedButton) {
+                selectedButton.classList.add('ring-2', 'ring-yellow-400', 'bg-yellow-200');
+            }
+        }
     }
 
     async loadAdminStats() {
@@ -438,6 +473,12 @@ class HiveApp {
         
         if (!message) return;
         
+        // Move input to bottom when sending a message
+        const container = document.getElementById('chat-input-container');
+        container.classList.remove('chat-input-centered');
+        container.classList.add('chat-input-bottom');
+        input.classList.add('chat-input-focused');
+        
         // Add user message to chat
         this.addMessageToChat(message, 'user');
         input.value = '';
@@ -464,7 +505,7 @@ class HiveApp {
         messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
         
         const bubbleClass = sender === 'user' 
-            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white max-w-md rounded-2xl p-4'
+            ? 'bg-yellow-400 text-white max-w-md rounded-2xl p-4 shadow-lg'
             : 'chat-bubble rounded-2xl p-4 max-w-md';
         
         messageDiv.innerHTML = `
@@ -472,7 +513,7 @@ class HiveApp {
                 <div class="flex items-start">
                     ${sender === 'assistant' ? `
                         <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                            <i class="fas fa-robot text-gray-800 text-sm"></i>
+                            <i class="fas fa-bee text-gray-800 text-sm"></i>
                         </div>
                     ` : ''}
                     <div class="flex-1">
@@ -483,7 +524,13 @@ class HiveApp {
         `;
         
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Scroll to bottom with smooth animation
+        setTimeout(() => {
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
     }
 
     showTypingIndicator() {
@@ -495,7 +542,7 @@ class HiveApp {
             <div class="chat-bubble rounded-2xl p-4 max-w-md">
                 <div class="flex items-start">
                     <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        <i class="fas fa-robot text-gray-800 text-sm"></i>
+                        <i class="fas fa-bee text-gray-800 text-sm"></i>
                     </div>
                     <div class="flex-1">
                         <div class="flex space-x-1">
@@ -519,26 +566,66 @@ class HiveApp {
     }
 
     async getAIResponse(message) {
-        // This is a placeholder - in a real implementation, you would call your AI agent here
-        // For now, return a simple response
-        const responses = [
-            "That's an interesting question! Let me help you with that.",
-            "I understand what you're asking. Here's what I think...",
-            "Great question! Based on your context, I'd suggest...",
-            "I can definitely help you with that. Let me break it down...",
-            "That's a common challenge. Here's how I'd approach it..."
-        ];
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-        
-        return responses[Math.floor(Math.random() * responses.length)] + " " + message;
+        try {
+            // Check if user has any agents
+            if (this.agents.length === 0) {
+                return "I don't have any AI agents available yet. Please create an agent first!";
+            }
+
+            // Use selected agent or default to first agent
+            let agentId = this.selectedAgentId;
+            if (!agentId) {
+                agentId = this.agents[0].id;
+                this.selectedAgentId = agentId;
+                this.updateAgentSelection();
+            }
+            
+            const response = await fetch(`${this.apiBase}/agents/${agentId}/query`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({ query: message })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                return data.response || "I received your message but couldn't generate a response.";
+            } else {
+                console.error('Agent query error:', data);
+                return "I encountered an error while processing your request. Please try again.";
+            }
+        } catch (error) {
+            console.error('Error calling AI agent:', error);
+            return "I'm having trouble connecting to my AI agents right now. Please try again in a moment.";
+        }
     }
 
     autoResizeTextarea(e) {
         const textarea = e.target;
         textarea.style.height = 'auto';
         textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    handleChatInputFocus(e) {
+        const textarea = e.target;
+        
+        // Just change text alignment when focused, don't move the container
+        textarea.classList.add('chat-input-focused');
+    }
+
+    handleChatInputBlur(e) {
+        const textarea = e.target;
+        
+        // If textarea is empty, move back to center
+        if (textarea.value.trim().length === 0) {
+            const container = document.getElementById('chat-input-container');
+            container.classList.remove('chat-input-bottom');
+            container.classList.add('chat-input-centered');
+            textarea.classList.remove('chat-input-focused');
+        }
     }
 
     toggleAuthForms() {

@@ -54,15 +54,7 @@ export class AgentManager {
     }
 
     // Create agent in database first
-    const agentId = uuidv4();
-    await this.db.createAgent({
-      id: agentId,
-      userId,
-      name: agentData.name,
-      personality: agentData.personality,
-      workPreferences: [], // No longer needed
-      isActive: true
-    });
+    
 
     // Create agent in Letta with persona and user memory block
     const agent = await this.client.agents.create({
@@ -74,6 +66,15 @@ export class AgentManager {
         value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`
       }],
       blockIds: [userMemoryBlockId] // Attach user's memory block
+    });
+
+    await this.db.createAgent({
+      id: agent.id || uuidv4(),
+      userId,
+      name: agentData.name,
+      personality: agentData.personality,
+      workPreferences: [], // No longer needed
+      isActive: true
     });
 
     return agent;
@@ -89,7 +90,7 @@ export class AgentManager {
       return null;
     }
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     return aiAgent;
   }
@@ -102,7 +103,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -120,7 +121,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -143,7 +144,7 @@ export class AgentManager {
     const agent = await this.db.getAgentById(agentId);
     if (!agent) return null;
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     
     return aiAgent;
