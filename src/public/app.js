@@ -16,7 +16,7 @@ class HiveApp {
     setupEventListeners() {
         // Login/Register forms
         document.getElementById('login-form-element').addEventListener('submit', (e) => this.handleLogin(e));
-        document.getElementById('register-form').addEventListener('submit', (e) => this.handleRegister(e));
+        document.getElementById('register-form-element').addEventListener('submit', (e) => this.handleRegister(e));
         document.getElementById('show-register').addEventListener('click', () => this.toggleAuthForms());
         document.getElementById('show-login').addEventListener('click', () => this.toggleAuthForms());
         
@@ -31,13 +31,11 @@ class HiveApp {
         document.getElementById('create-agent-form').addEventListener('submit', (e) => this.handleCreateAgent(e));
         document.getElementById('cancel-create-agent').addEventListener('click', () => this.hideCreateAgentModal());
         
-        // Query interface
-        document.getElementById('query-btn').addEventListener('click', () => this.sendQuery());
+        // Chat interface
+        document.getElementById('chat-form').addEventListener('submit', (e) => this.handleChatSubmit(e));
         
-        // Admin panel
-        document.getElementById('manage-projects-btn').addEventListener('click', () => this.showProjects());
-        document.getElementById('manage-memory-btn').addEventListener('click', () => this.showMemory());
-        document.getElementById('view-all-agents-btn').addEventListener('click', () => this.showAllAgents());
+        // Auto-resize textarea
+        document.getElementById('chat-input').addEventListener('input', (e) => this.autoResizeTextarea(e));
     }
 
     async checkAuth() {
@@ -174,9 +172,26 @@ class HiveApp {
 
     async loadUserData() {
         await this.loadAgents();
-        if (this.user.role === 'admin') {
-            await this.loadAdminStats();
-        }
+        this.loadProjects();
+    }
+
+    loadProjects() {
+        // For now, show placeholder projects
+        const projectsList = document.getElementById('projects-list');
+        projectsList.innerHTML = `
+            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+                <i class="fas fa-project-diagram mr-2"></i>E-commerce Platform
+            </div>
+            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+                <i class="fas fa-mobile-alt mr-2"></i>Mobile App
+            </div>
+            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2">
+                <i class="fas fa-database mr-2"></i>Data Analytics
+            </div>
+            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium">
+                <i class="fas fa-plus mr-2"></i>Create New Project
+            </div>
+        `;
     }
 
     async loadAgents() {
@@ -188,13 +203,32 @@ class HiveApp {
             const data = await response.json();
             
             if (response.ok) {
-                this.agents = data.agents;
-                this.renderAgents();
-                this.updateAgentSelect();
+                this.agents = data.agents || [];
+                this.renderAgentsSidebar();
             }
         } catch (error) {
             console.error('Failed to load agents:', error);
         }
+    }
+
+    renderAgentsSidebar() {
+        const agentsSidebar = document.getElementById('agents-sidebar');
+        if (this.agents.length === 0) {
+            agentsSidebar.innerHTML = '<p class="text-yellow-200 text-sm text-center">No agents yet</p>';
+            return;
+        }
+
+        agentsSidebar.innerHTML = this.agents.map(agent => `
+            <div class="project-button rounded-lg p-3 text-center text-gray-800 font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300" 
+                 onclick="app.selectAgent('${agent.id}')">
+                <i class="fas fa-robot mr-2"></i>${agent.name}
+            </div>
+        `).join('');
+    }
+
+    selectAgent(agentId) {
+        // For now, just show a message
+        this.addMessageToChat(`Selected agent: ${this.agents.find(a => a.id === agentId)?.name || 'Unknown'}`, 'assistant');
     }
 
     async loadAdminStats() {
@@ -371,34 +405,140 @@ class HiveApp {
     }
 
     showLogin() {
-        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('chatbot-interface').classList.add('hidden');
         document.getElementById('questionnaire').classList.add('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('login-btn').classList.remove('hidden');
-        document.getElementById('logout-btn').classList.add('hidden');
     }
 
     showQuestionnaire() {
-        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('chatbot-interface').classList.add('hidden');
         document.getElementById('questionnaire').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('login-btn').classList.add('hidden');
-        document.getElementById('logout-btn').classList.remove('hidden');
     }
 
     showDashboard() {
-        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('chatbot-interface').classList.remove('hidden');
         document.getElementById('questionnaire').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('login-btn').classList.add('hidden');
-        document.getElementById('logout-btn').classList.remove('hidden');
-        
-        if (this.user && this.user.role === 'admin') {
-            document.getElementById('admin-panel').classList.remove('hidden');
+        this.updateUserInfo();
+        this.loadUserData();
+    }
+
+    updateUserInfo() {
+        if (this.user) {
+            document.getElementById('user-name').textContent = this.user.name;
+            document.getElementById('user-role').textContent = this.user.role;
         }
+    }
+
+    async handleChatSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
         
-        document.getElementById('user-info').textContent = `Welcome, ${this.user.name} (${this.user.role})`;
-        document.getElementById('user-info').classList.remove('hidden');
+        if (!message) return;
+        
+        // Add user message to chat
+        this.addMessageToChat(message, 'user');
+        input.value = '';
+        this.autoResizeTextarea({ target: input });
+        
+        // Show typing indicator
+        this.showTypingIndicator();
+        
+        try {
+            // For now, we'll use a simple response
+            // In a real implementation, this would call your AI agent
+            const response = await this.getAIResponse(message);
+            this.hideTypingIndicator();
+            this.addMessageToChat(response, 'assistant');
+        } catch (error) {
+            this.hideTypingIndicator();
+            this.addMessageToChat('Sorry, I encountered an error. Please try again.', 'assistant');
+        }
+    }
+
+    addMessageToChat(message, sender) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
+        
+        const bubbleClass = sender === 'user' 
+            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white max-w-md rounded-2xl p-4'
+            : 'chat-bubble rounded-2xl p-4 max-w-md';
+        
+        messageDiv.innerHTML = `
+            <div class="${bubbleClass}">
+                <div class="flex items-start">
+                    ${sender === 'assistant' ? `
+                        <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-robot text-gray-800 text-sm"></i>
+                        </div>
+                    ` : ''}
+                    <div class="flex-1">
+                        <p class="font-medium">${message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    showTypingIndicator() {
+        const chatMessages = document.getElementById('chat-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.className = 'flex justify-start mb-4';
+        typingDiv.innerHTML = `
+            <div class="chat-bubble rounded-2xl p-4 max-w-md">
+                <div class="flex items-start">
+                    <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-robot text-gray-800 text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    async getAIResponse(message) {
+        // This is a placeholder - in a real implementation, you would call your AI agent here
+        // For now, return a simple response
+        const responses = [
+            "That's an interesting question! Let me help you with that.",
+            "I understand what you're asking. Here's what I think...",
+            "Great question! Based on your context, I'd suggest...",
+            "I can definitely help you with that. Let me break it down...",
+            "That's a common challenge. Here's how I'd approach it..."
+        ];
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+        
+        return responses[Math.floor(Math.random() * responses.length)] + " " + message;
+    }
+
+    autoResizeTextarea(e) {
+        const textarea = e.target;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
     }
 
     toggleAuthForms() {
