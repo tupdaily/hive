@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT CHECK(role IN ('admin', 'employee')) NOT NULL DEFAULT 'employee',
+  description TEXT, -- User's role and what they're working on
+  memory_block_id TEXT, -- Reference to the user's shared memory block
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -51,7 +51,7 @@ class App {
         this.app.get('/health', (req, res) => {
             res.json({ status: 'ok', timestamp: new Date().toISOString() });
         });
-        this.app.use('/api/auth', (0, auth_2.createAuthRoutes)(this.authService));
+        this.app.use('/api/auth', (0, auth_2.createAuthRoutes)(this.authService, this.db));
         this.app.use('/api/agents', (0, agents_1.createAgentRoutes)(this.agentManager, this.authService));
         this.app.use('/api/admin', (0, admin_1.createAdminRoutes)(this.db, this.agentManager, this.authService));
         this.app.get('/', (req, res) => {

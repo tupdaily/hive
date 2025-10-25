@@ -6,22 +6,18 @@ import { z } from 'zod';
 const createAgentSchema = z.object({
   name: z.string().min(1),
   personality: z.string().min(1),
-  workPreferences: z.array(z.string()).min(1)
+  description: z.string().min(1)
 });
 
 const updateAgentSchema = z.object({
   name: z.string().min(1).optional(),
   personality: z.string().min(1).optional(),
-  workPreferences: z.array(z.string()).min(1).optional(),
+  description: z.string().min(1).optional(),
   isActive: z.boolean().optional()
 });
 
 const querySchema = z.object({
-  query: z.string().min(1),
-  context: z.object({
-    projectId: z.string().optional(),
-    agentId: z.string().optional()
-  }).optional()
+  query: z.string().min(1)
 });
 
 export const createAgentRoutes = (agentManager: AgentManager, authService: any) => {
@@ -34,7 +30,7 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
   // Create a new agent
   router.post('/', async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { name, personality, workPreferences } = createAgentSchema.parse(req.body);
+      const { name, personality, description } = createAgentSchema.parse(req.body);
       
       if (!req.user) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -43,7 +39,7 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
       const agent = await agentManager.createAgent(req.user.userId, {
         name,
         personality,
-        workPreferences
+        description
       });
 
       res.status(201).json({
@@ -194,7 +190,7 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
   router.post('/:agentId/query', async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agentId } = req.params;
-      const { query, context } = querySchema.parse(req.body);
+      const { query } = querySchema.parse(req.body);
       
       if (!req.user) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -211,13 +207,13 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
         return res.status(403).json({ error: 'Access denied' });
       }
 
-      const response = await agent.query({
-        userId: req.user.userId,
-        query,
-        context
-      });
+      const response = await agent.query(query);
 
-      res.json(response);
+      res.json({
+        response: response,
+        agentId: agentId,
+        timestamp: new Date()
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid input', details: error.errors });

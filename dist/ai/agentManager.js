@@ -16,13 +16,34 @@ class AgentManager {
         });
     }
     async createAgent(userId, agentData) {
+        const user = await this.db.getUserById(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        let userMemoryBlockId = user.memoryBlockId;
+        if (!userMemoryBlockId) {
+            const userMemoryBlock = await this.client.blocks.create({
+                label: user.email || user.id,
+                value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`
+            });
+            userMemoryBlockId = userMemoryBlock.id;
+            await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
+        }
+        else {
+            const newUserMemoryBlock = await this.client.blocks.create({
+                label: user.email || user.id,
+                value: `User: ${user.name} (${user.email})\nDescription: ${user.description || 'No description provided'}`
+            });
+            userMemoryBlockId = newUserMemoryBlock.id;
+            await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
+        }
         const agentId = (0, uuid_1.v4)();
         await this.db.createAgent({
             id: agentId,
             userId,
             name: agentData.name,
             personality: agentData.personality,
-            workPreferences: agentData.workPreferences,
+            workPreferences: [],
             isActive: true
         });
         const agent = await this.client.agents.create({
@@ -30,12 +51,9 @@ class AgentManager {
             embedding: "openai/text-embedding-3-small",
             memoryBlocks: [{
                     label: "persona",
-                    value: "I am an agent that helps with the company's needs with the following personality: " + agentData.personality
-                },
-                {
-                    label: "work_preferences",
-                    value: agentData.workPreferences.join(", ")
-                }]
+                    value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`
+                }],
+            blockIds: [userMemoryBlockId]
         });
         return agent;
     }

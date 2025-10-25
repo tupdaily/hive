@@ -56,6 +56,8 @@ export class Database {
       name: data.name,
       passwordHash: data.password_hash,
       role: data.role,
+      description: data.description,
+      memoryBlockId: data.memory_block_id,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -76,6 +78,8 @@ export class Database {
       email: data.email,
       name: data.name,
       role: data.role,
+      description: data.description,
+      memoryBlockId: data.memory_block_id,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -95,9 +99,37 @@ export class Database {
       email: user.email,
       name: user.name,
       role: user.role,
+      description: user.description,
+      memoryBlockId: user.memory_block_id,
       createdAt: new Date(user.created_at),
       updatedAt: new Date(user.updated_at)
     }));
+  }
+
+  async updateUserMemoryBlock(userId: string, memoryBlockId: string): Promise<void> {
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('users')
+      .update({ 
+        memory_block_id: memoryBlockId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
+  }
+
+  async updateUserDescription(userId: string, description: string): Promise<void> {
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('users')
+      .update({ 
+        description: description,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+    
+    if (error) throw error;
   }
 
   // Agent operations

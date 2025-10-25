@@ -107,6 +107,34 @@
                 </form>
             </div>
 
+            <!-- Questionnaire -->
+            <div id="questionnaire" class="hidden">
+                <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-2xl font-bold text-center mb-6">Tell Us About Yourself</h2>
+                    <p class="text-gray-600 text-center mb-6">
+                        Help us understand your role and what you're working on so we can create better AI agents for you.
+                    </p>
+                    <form id="questionnaire-form">
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="user-description">
+                                Your Role & Current Work
+                            </label>
+                            <textarea id="user-description" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                      rows="4" 
+                                      placeholder="Please describe your role, what you're currently working on, and any specific areas where you'd like AI assistance. For example: 'I'm a software engineer working on the frontend of our e-commerce platform. I'm currently focused on improving user experience and implementing new payment features. I'd like help with code reviews, debugging, and staying updated with the latest frontend technologies.'"
+                                      required></textarea>
+                            <p class="text-sm text-gray-500 mt-1">Minimum 10 characters required</p>
+                        </div>
+                        <div class="flex justify-center">
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                                <i class="fas fa-check mr-2"></i>Submit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Dashboard -->
             <div id="dashboard" class="hidden">
                 <!-- Agent Management -->
@@ -219,12 +247,14 @@
                                       placeholder="Describe the agent's personality and communication style..."></textarea>
                         </div>
                         <div class="mb-6">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-preferences">
-                                Work Preferences (comma-separated)
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="agent-description">
+                                What do you want me to do?
                             </label>
-                            <input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                                   id="agent-preferences" type="text" 
-                                   placeholder="e.g., frontend development, data analysis, project management">
+                            <textarea id="agent-description" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                      rows="3" 
+                                      placeholder="Describe what you want this agent to help you with. For example: 'Help me with code reviews, debugging, and staying updated with frontend technologies'"
+                                      required></textarea>
                         </div>
                         <div class="flex justify-end space-x-2">
                             <button type="button" id="cancel-create-agent" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">

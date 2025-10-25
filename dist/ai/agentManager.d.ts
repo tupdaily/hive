@@ -9,7 +9,7 @@ export declare class AgentManager {
     createAgent(userId: string, agentData: {
         name: string;
         personality: string;
-        workPreferences: string[];
+        description: string;
     }): Promise<import("@letta-ai/letta-client/api").AgentState>;
     getAgent(agentId: string): Promise<AIAgent | null>;
     getAgentsByUser(userId: string): Promise<AIAgent[]>;

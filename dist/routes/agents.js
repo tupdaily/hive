@@ -7,20 +7,16 @@ const zod_1 = require("zod");
 const createAgentSchema = zod_1.z.object({
     name: zod_1.z.string().min(1),
     personality: zod_1.z.string().min(1),
-    workPreferences: zod_1.z.array(zod_1.z.string()).min(1)
+    description: zod_1.z.string().min(1)
 });
 const updateAgentSchema = zod_1.z.object({
     name: zod_1.z.string().min(1).optional(),
     personality: zod_1.z.string().min(1).optional(),
-    workPreferences: zod_1.z.array(zod_1.z.string()).min(1).optional(),
+    description: zod_1.z.string().min(1).optional(),
     isActive: zod_1.z.boolean().optional()
 });
 const querySchema = zod_1.z.object({
-    query: zod_1.z.string().min(1),
-    context: zod_1.z.object({
-        projectId: zod_1.z.string().optional(),
-        agentId: zod_1.z.string().optional()
-    }).optional()
+    query: zod_1.z.string().min(1)
 });
 const createAgentRoutes = (agentManager, authService) => {
     const router = (0, express_1.Router)();
@@ -28,14 +24,14 @@ const createAgentRoutes = (agentManager, authService) => {
     router.use(auth_1.requireEmployee);
     router.post('/', async (req, res) => {
         try {
-            const { name, personality, workPreferences } = createAgentSchema.parse(req.body);
+            const { name, personality, description } = createAgentSchema.parse(req.body);
             if (!req.user) {
                 return res.status(401).json({ error: 'User not authenticated' });
             }
             const agent = await agentManager.createAgent(req.user.userId, {
                 name,
                 personality,
-                workPreferences
+                description
             });
             res.status(201).json({
                 message: 'Agent created successfully',
@@ -156,7 +152,7 @@ const createAgentRoutes = (agentManager, authService) => {
     router.post('/:agentId/query', async (req, res) => {
         try {
             const { agentId } = req.params;
-            const { query, context } = querySchema.parse(req.body);
+            const { query } = querySchema.parse(req.body);
             if (!req.user) {
                 return res.status(401).json({ error: 'User not authenticated' });
             }
@@ -168,12 +164,12 @@ const createAgentRoutes = (agentManager, authService) => {
             if (agentData.userId !== req.user.userId && req.user.role !== 'admin') {
                 return res.status(403).json({ error: 'Access denied' });
             }
-            const response = await agent.query({
-                userId: req.user.userId,
-                query,
-                context
+            const response = await agent.query(query);
+            res.json({
+                response: response,
+                agentId: agentId,
+                timestamp: new Date()
             });
-            res.json(response);
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {

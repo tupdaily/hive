@@ -3,6 +3,8 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'employee';
+  description?: string;
+  memoryBlockId?: string;
   createdAt: Date;
   updatedAt: Date;
 }

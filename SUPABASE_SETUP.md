@@ -69,11 +69,18 @@ npm run dev
 
 The following tables will be created:
 
-- **users**: User accounts with authentication
+- **users**: User accounts with authentication and memory block references
 - **agents**: AI agents belonging to users
 - **projects**: Project management
 - **project_members**: Many-to-many relationship between projects and agents
 - **memory_blocks**: Shared and individual memory storage
+
+### Key Changes in the New Memory System:
+
+1. **User Memory Blocks**: Each user now has a dedicated memory block stored in Supabase with their user ID/email as the label
+2. **Agent Creation**: When creating an agent, users provide a description of what they want the agent to do
+3. **Simplified Agent Queries**: Agents now only have a simple query method that uses Letta's message API
+4. **Persona Integration**: Agent personas now include the user's description of what they want the agent to do
 
 ## Security Notes
 

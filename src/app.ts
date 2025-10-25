@@ -66,7 +66,7 @@ export class App {
     });
 
     // API routes
-    this.app.use('/api/auth', createAuthRoutes(this.authService));
+    this.app.use('/api/auth', createAuthRoutes(this.authService, this.db));
     this.app.use('/api/agents', createAgentRoutes(this.agentManager, this.authService));
     this.app.use('/api/admin', createAdminRoutes(this.db, this.agentManager, this.authService));
 

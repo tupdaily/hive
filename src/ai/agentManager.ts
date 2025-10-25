@@ -20,8 +20,39 @@ export class AgentManager {
   async createAgent(userId: string, agentData: {
     name: string;
     personality: string;
-    workPreferences: string[];
+    description: string; // What the user wants the agent to do
   }) {
+    // Get user to check if they have a memory block
+    const user = await this.db.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    let userMemoryBlockId = user.memoryBlockId;
+
+    // Create user memory block if it doesn't exist
+    if (!userMemoryBlockId) {
+      const userMemoryBlock = await this.client.blocks.create({
+        label: user.email || user.id,
+        value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`
+      });
+      userMemoryBlockId = userMemoryBlock.id;
+      
+      // Update user with memory block ID
+      await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
+    } else {
+      // For now, we'll create a new memory block and update the user's reference
+      // In a production app, you might want to implement block updates
+      const newUserMemoryBlock = await this.client.blocks.create({
+        label: user.email || user.id,
+        value: `User: ${user.name} (${user.email})\nDescription: ${user.description || 'No description provided'}`
+      });
+      userMemoryBlockId = newUserMemoryBlock.id;
+      
+      // Update user with new memory block ID
+      await this.db.updateUserMemoryBlock(userId, userMemoryBlockId);
+    }
+
     // Create agent in database first
     const agentId = uuidv4();
     await this.db.createAgent({
@@ -29,23 +60,20 @@ export class AgentManager {
       userId,
       name: agentData.name,
       personality: agentData.personality,
-      workPreferences: agentData.workPreferences,
+      workPreferences: [], // No longer needed
       isActive: true
     });
 
-    // Create agent in Letta
+    // Create agent in Letta with persona and user memory block
     const agent = await this.client.agents.create({
       model: "anthropic/claude-3-5-sonnet-20241022",
       embedding: "openai/text-embedding-3-small",
       
       memoryBlocks: [{ 
         label: "persona", 
-        value: "I am an agent that helps with the company's needs with the following personality: " + agentData.personality 
-      }, 
-      { 
-        label: "work_preferences", 
-        value: agentData.workPreferences.join(", ") 
-      }]
+        value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`
+      }],
+      blockIds: [userMemoryBlockId] // Attach user's memory block
     });
 
     return agent;

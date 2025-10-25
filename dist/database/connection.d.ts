@@ -13,6 +13,8 @@ export declare class Database {
     }) | null>;
     getUserById(id: string): Promise<User | null>;
     getAllUsers(): Promise<User[]>;
+    updateUserMemoryBlock(userId: string, memoryBlockId: string): Promise<void>;
+    updateUserDescription(userId: string, description: string): Promise<void>;
     createAgent(agent: Omit<Agent, 'createdAt' | 'updatedAt'>): Promise<void>;
     getAgentById(id: string): Promise<Agent | null>;
     getAgentsByUserId(userId: string): Promise<Agent[]>;

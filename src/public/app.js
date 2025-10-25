@@ -20,6 +20,9 @@ class HiveApp {
         document.getElementById('show-register').addEventListener('click', () => this.toggleAuthForms());
         document.getElementById('show-login').addEventListener('click', () => this.toggleAuthForms());
         
+        // Questionnaire
+        document.getElementById('questionnaire-form').addEventListener('submit', (e) => this.handleQuestionnaire(e));
+        
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => this.logout());
         
@@ -37,10 +40,22 @@ class HiveApp {
         document.getElementById('view-all-agents-btn').addEventListener('click', () => this.showAllAgents());
     }
 
-    checkAuth() {
+    async checkAuth() {
         if (this.token && this.user) {
-            this.showDashboard();
-            this.loadUserData();
+            // Check if user has completed questionnaire
+            try {
+                const response = await this.apiCall('/auth/profile', 'GET');
+                if (response.user && !response.user.hasDescription) {
+                    this.showQuestionnaire();
+                } else {
+                    this.showDashboard();
+                    this.loadUserData();
+                }
+            } catch (error) {
+                console.error('Error checking user profile:', error);
+                this.showDashboard();
+                this.loadUserData();
+            }
         } else {
             this.showLogin();
         }
@@ -103,6 +118,20 @@ class HiveApp {
             }
         } catch (error) {
             this.showError('Registration failed. Please try again.');
+        }
+    }
+
+    async handleQuestionnaire(e) {
+        e.preventDefault();
+        const description = document.getElementById('user-description').value;
+        
+        try {
+            const response = await this.apiCall('/auth/questionnaire', 'POST', { description });
+            this.showSuccess('Questionnaire submitted successfully!');
+            this.showDashboard();
+            this.loadUserData();
+        } catch (error) {
+            this.showError('Failed to submit questionnaire. Please try again.');
         }
     }
 
@@ -201,7 +230,7 @@ class HiveApp {
         e.preventDefault();
         const name = document.getElementById('agent-name').value;
         const personality = document.getElementById('agent-personality').value;
-        const preferences = document.getElementById('agent-preferences').value.split(',').map(p => p.trim()).filter(p => p);
+        const description = document.getElementById('agent-description').value;
 
         try {
             const response = await fetch(`${this.apiBase}/agents`, {
@@ -210,7 +239,7 @@ class HiveApp {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.token}`
                 },
-                body: JSON.stringify({ name, personality, workPreferences: preferences })
+                body: JSON.stringify({ name, personality, description })
             });
 
             const data = await response.json();
@@ -306,13 +335,23 @@ class HiveApp {
 
     showLogin() {
         document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('questionnaire').classList.add('hidden');
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('login-btn').classList.remove('hidden');
         document.getElementById('logout-btn').classList.add('hidden');
     }
 
+    showQuestionnaire() {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('questionnaire').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('logout-btn').classList.remove('hidden');
+    }
+
     showDashboard() {
         document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('questionnaire').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
         document.getElementById('login-btn').classList.add('hidden');
         document.getElementById('logout-btn').classList.remove('hidden');
