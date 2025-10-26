@@ -38,6 +38,17 @@ export class AgentManager {
 
     let userMemoryBlockId = user.memoryBlockId;
 
+    // Try to list MCP tools from a configured server (optional).
+    // Replace "Composio" with your MCP server name configured in ADE if different.
+    let mcpTools: any[] = [];
+    try {
+      mcpTools = await this.client.tools.listMcpToolsByServer("Composio");
+      console.log('Found MCP tools for server Composio:', mcpTools.map(t => t.id || t.name));
+    } catch (err) {
+      console.warn('Unable to list MCP tools for server Composio (continuing without tools):', err instanceof Error ? err.message : String(err));
+      mcpTools = [];
+    }
+
     // Create user memory block if it doesn't exist
     if (!userMemoryBlockId) {
       const userMemoryBlock = await this.client.blocks.create({
@@ -128,14 +139,24 @@ Improvements needed:
       blockIds.push(projectMemoryBlockId);
     }
 
-    // Create agent in Letta with persona memory block
+    // Create agent in Letta with persona memory block and MCP tools (if any)
     try {
-      const lettaAgent = await this.client.agents.create({
+      const toolIds = (mcpTools || []).map(t => t.id).filter(Boolean);
+      if (toolIds.length) console.log('Attaching MCP tool ids to new agent:', toolIds);
+
+      const createPayload: any = {
         name: agentData.name,
         model: "openai/gpt-4.1",
         embedding: "openai/text-embedding-3-small",
-        memoryBlocks: memoryBlocks,
-      });
+        memoryBlocks: memoryBlocks
+      };
+
+      if (toolIds.length) {
+        // Use toolIds to attach MCP tools to the agent at creation time
+        createPayload.toolIds = toolIds;
+      }
+
+      const lettaAgent = await this.client.agents.create(createPayload);
 
       // Update database agent with Letta agent ID
       await this.db.updateAgent(agentId, {
