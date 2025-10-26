@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNotification } from '../hooks/useNotification'
+import { GmailIntegration } from './GmailIntegration'
 
 interface User {
   id: string
@@ -239,69 +240,12 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
     <div className="min-h-screen honeycomb-bg honeycomb-pattern relative overflow-hidden">
       {/* Floating Honeycombs Background */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Top Row */}
-        <div className="hexagon honeycomb-float absolute top-8 left-4 honeycomb-pulse" style={{animationDelay: '0s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-1/4 honeycomb-pulse" style={{animationDelay: '0.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-1/2 honeycomb-pulse" style={{animationDelay: '0.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-3/4 honeycomb-pulse" style={{animationDelay: '0.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 right-4 honeycomb-pulse" style={{animationDelay: '1.2s'}}></div>
-        
-        {/* Second Row */}
-        <div className="hexagon honeycomb-float absolute top-24 left-8 honeycomb-pulse" style={{animationDelay: '1.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 left-1/3 honeycomb-pulse" style={{animationDelay: '1.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 left-2/3 honeycomb-pulse" style={{animationDelay: '2.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 right-8 honeycomb-pulse" style={{animationDelay: '2.4s'}}></div>
-        
-        {/* Third Row */}
-        <div className="hexagon honeycomb-float absolute top-40 left-12 honeycomb-pulse" style={{animationDelay: '2.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-1/5 honeycomb-pulse" style={{animationDelay: '3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-2/5 honeycomb-pulse" style={{animationDelay: '3.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-3/5 honeycomb-pulse" style={{animationDelay: '3.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-4/5 honeycomb-pulse" style={{animationDelay: '3.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 right-12 honeycomb-pulse" style={{animationDelay: '4.2s'}}></div>
-        
-        {/* Middle Top */}
-        <div className="hexagon honeycomb-float absolute top-1/3 left-6 honeycomb-pulse" style={{animationDelay: '4.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/6 honeycomb-pulse" style={{animationDelay: '4.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/3 honeycomb-pulse" style={{animationDelay: '5.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/2 honeycomb-pulse" style={{animationDelay: '5.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-2/3 honeycomb-pulse" style={{animationDelay: '5.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-5/6 honeycomb-pulse" style={{animationDelay: '6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 right-6 honeycomb-pulse" style={{animationDelay: '6.3s'}}></div>
-        
-        {/* Center */}
-        <div className="hexagon honeycomb-float absolute top-1/2 left-10 honeycomb-pulse" style={{animationDelay: '6.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-1/8 honeycomb-pulse" style={{animationDelay: '6.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-3/8 honeycomb-pulse" style={{animationDelay: '7.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-5/8 honeycomb-pulse" style={{animationDelay: '7.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-7/8 honeycomb-pulse" style={{animationDelay: '7.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 right-10 honeycomb-pulse" style={{animationDelay: '8.1s'}}></div>
-        
-        {/* Middle Bottom */}
-        <div className="hexagon honeycomb-float absolute top-2/3 left-8 honeycomb-pulse" style={{animationDelay: '8.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-1/4 honeycomb-pulse" style={{animationDelay: '8.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-1/2 honeycomb-pulse" style={{animationDelay: '9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-3/4 honeycomb-pulse" style={{animationDelay: '9.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 right-8 honeycomb-pulse" style={{animationDelay: '9.6s'}}></div>
-        
-        {/* Bottom Rows */}
-        <div className="hexagon honeycomb-float absolute bottom-32 left-4 honeycomb-pulse" style={{animationDelay: '9.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 left-1/3 honeycomb-pulse" style={{animationDelay: '10.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 left-2/3 honeycomb-pulse" style={{animationDelay: '10.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 right-4 honeycomb-pulse" style={{animationDelay: '10.8s'}}></div>
-        
-        <div className="hexagon honeycomb-float absolute bottom-16 left-8 honeycomb-pulse" style={{animationDelay: '11.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-1/5 honeycomb-pulse" style={{animationDelay: '11.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-2/5 honeycomb-pulse" style={{animationDelay: '11.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-3/5 honeycomb-pulse" style={{animationDelay: '12s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-4/5 honeycomb-pulse" style={{animationDelay: '12.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 right-8 honeycomb-pulse" style={{animationDelay: '12.6s'}}></div>
-        
-        <div className="hexagon honeycomb-float absolute bottom-4 left-12 honeycomb-pulse" style={{animationDelay: '12.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-1/4 honeycomb-pulse" style={{animationDelay: '13.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-1/2 honeycomb-pulse" style={{animationDelay: '13.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-3/4 honeycomb-pulse" style={{animationDelay: '13.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 right-12 honeycomb-pulse" style={{animationDelay: '14.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-20 left-10 honeycomb-pulse" style={{animationDelay: '0s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 right-20 honeycomb-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-40 left-20 honeycomb-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-20 right-10 honeycomb-pulse" style={{animationDelay: '3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-60 left-1/2 honeycomb-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-60 right-1/3 honeycomb-pulse" style={{animationDelay: '5s'}}></div>
       </div>
 
       <div className="flex h-screen">
@@ -353,6 +297,17 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
                 <i className="fas fa-cog mr-2"></i>Admin Console
               </button>
             )}
+
+            {/* Gmail Integration */}
+            <div className="p-4 border-t border-gray-700">
+              <div className="text-sm text-gray-300 mb-2">Gmail Integration</div>
+              <GmailIntegration 
+                userId={user.id}
+                token={token}
+                onSuccess={(message) => showSuccess(message)}
+                onError={(error) => showError(error)}
+              />
+            </div>
           </div>
 
           {/* Logout Button - Bottom */}
