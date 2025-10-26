@@ -37,20 +37,21 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   description TEXT,
   status TEXT CHECK(status IN ('active', 'completed', 'paused')) DEFAULT 'active',
+  memory_block_id TEXT, -- Letta AI memory block ID
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Project members table
+-- Project members table (links users to projects)
 CREATE TABLE IF NOT EXISTS project_members (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL,
-  agent_id UUID NOT NULL,
+  user_id UUID NOT NULL,
   role TEXT CHECK(role IN ('lead', 'member')) DEFAULT 'member',
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-  FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE,
-  UNIQUE(project_id, agent_id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(project_id, user_id)
 );
 
 -- Memory blocks table

@@ -13,11 +13,11 @@ const assignUserSchema = z.object({
   projectId: z.string().min(1)
 });
 
-export const createProjectRoutes = (db: any) => {
+export const createProjectRoutes = (db: any, authService: any) => {
   const router = Router();
 
   // Apply authentication to all routes
-  router.use(authenticateToken(db));
+  router.use(authenticateToken(authService));
 
   // Get user's assigned projects
   router.get('/my-projects', requireEmployee, async (req: AuthenticatedRequest, res: Response) => {

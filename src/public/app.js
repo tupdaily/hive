@@ -215,26 +215,33 @@ class HiveApp {
 
     async loadUserData() {
         await this.loadUserAgent();
-        await this.loadUserProjects();
-        await this.resetProjectMemoryBlocks(); // Reset memory blocks on login
+        await this.loadUserProjects(); // Reset memory blocks on login
     }
 
     async loadUserAgent() {
         try {
+            console.log('Loading user agent...');
             const response = await fetch(`${this.apiBase}/agents/my-agents`, {
                 headers: { 'Authorization': `Bearer ${this.token}` }
             });
 
             const data = await response.json();
+            console.log('Load agents response:', data);
             
             if (response.ok) {
                 // Get the first agent (or create one if none exist)
                 this.userAgent = data.agents && data.agents.length > 0 ? data.agents[0] : null;
+                console.log('Current user agent:', this.userAgent);
                 
                 if (!this.userAgent) {
+                    console.log('No agent found, creating default agent...');
                     // Create a default agent for the user
                     await this.createDefaultAgent();
+                } else {
+                    console.log('Using existing agent:', this.userAgent.name);
                 }
+            } else {
+                console.error('Failed to load agents:', data);
             }
         } catch (error) {
             console.error('Failed to load user agent:', error);
@@ -243,6 +250,9 @@ class HiveApp {
 
     async createDefaultAgent() {
         try {
+            console.log('Creating default agent for user:', this.user.name);
+            console.log('User description:', this.user.description);
+            
             const response = await fetch(`${this.apiBase}/agents`, {
                 method: 'POST',
                 headers: { 
@@ -257,13 +267,19 @@ class HiveApp {
             });
             
             const data = await response.json();
+            console.log('Agent creation response:', data);
             
             if (response.ok) {
                 this.userAgent = data.agent;
+                console.log('Agent created successfully:', this.userAgent);
                 this.addMessageToChat(`Welcome! I'm ${this.userAgent.name}, your AI assistant. How can I help you today?`, 'assistant');
+            } else {
+                console.error('Failed to create agent:', data);
+                this.showError('Failed to create your AI assistant. Please try again.');
             }
         } catch (error) {
             console.error('Failed to create default agent:', error);
+            this.showError('Failed to create your AI assistant. Please try again.');
         }
     }
 
@@ -339,14 +355,14 @@ class HiveApp {
             // Implementation would involve adding the project's memory block to the user's agent
         }
     }
-
-    async removeProjectMemoryBlock(projectId) {
-        const project = this.userProjects.find(p => p.id === projectId);
-        if (project && this.userAgent) {
-            console.log(`Removing memory block for project: ${project.name}`);
-            // Implementation would involve removing the project's memory block from the user's agent
-        }
-    }
+    
+    // async removeProjectMemoryBlock(projectId) {
+    //     const project = this.userProjects.find(p => p.id === projectId);
+    //     if (project && this.userAgent) {
+    //         console.log(`Removing memory block for project: ${project.name}`);
+    //         // Implementation would involve removing the project's memory block from the user's agent
+    //     }
+    // }
 
     showAdminConsole() {
         document.getElementById('admin-console-modal').classList.remove('hidden');

@@ -70,7 +70,7 @@ export class App {
     this.app.use('/api/auth', createAuthRoutes(this.authService, this.db));
     this.app.use('/api/agents', createAgentRoutes(this.agentManager, this.authService));
     this.app.use('/api/admin', createAdminRoutes(this.db, this.agentManager, this.authService));
-    this.app.use('/api/projects', createProjectRoutes(this.db));
+    this.app.use('/api/projects', createProjectRoutes(this.db, this.authService));
 
     // Serve the main app
     this.app.get('/', (req, res) => {
