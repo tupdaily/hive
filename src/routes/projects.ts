@@ -52,18 +52,19 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
       // Create a shared memory block in Letta for this project
       let memoryBlockId = null;
       try {
+        console.log('Creating Letta memory block for project:', name);
         const lettaClient = agentManager.getClient();
         const memoryBlock = await lettaClient.blocks.create({
-          label: `Project: ${name}`,
-          value: `Project: ${name}\nDescription: ${description || 'No description provided'}`,
-          metadata: {
-            type: 'shared',
-            project: name
-          }
+          label: name,
+          value: description || 'No description provided',
+          limit: 4000,
+          description: "Stores key information about the project, current progress, overall goal, how it fits into the rest of the organization, what tasks remain, who's working on what, with a focus on information that changes dynamically (tasking, individuals working on the project)"
         });
         memoryBlockId = memoryBlock.id;
+        console.log('Successfully created Letta memory block:', memoryBlockId);
       } catch (lettaError) {
         console.error('Failed to create Letta memory block:', lettaError);
+        console.error('Letta error details:', JSON.stringify(lettaError, null, 2));
         // Continue without memory block - project will be created but without Letta integration
       }
 
@@ -73,25 +74,14 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
         memoryBlockId
       });
 
-      // Auto-assign all users to this project (optional - you can remove this if you want manual assignment)
-      try {
-        const users = await db.getAllUsers();
-        for (const user of users) {
-          try {
-            await db.addUserToProject(user.id, project.id);
-          } catch (assignError) {
-            console.error(`Failed to assign user ${user.email} to project:`, assignError);
-            // Continue with other users
-          }
-        }
-      } catch (usersError) {
-        console.error('Failed to fetch users for auto-assignment:', usersError);
-        // Continue - project is created even if auto-assignment fails
-      }
+      // Project created without auto-assignment - users must be manually assigned through Admin Console
 
       res.status(201).json({
         message: 'Project created successfully',
-        project
+        project: {
+          ...project,
+          memoryBlockCreated: !!memoryBlockId
+        }
       });
     } catch (error) {
       console.error('Error creating project:', error);
@@ -110,6 +100,33 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
 
       await db.addUserToProject(userId, projectId);
 
+      // Add project memory block to user's agent
+      try {
+        console.log('SQL querying DB')
+        const userAgent = await db.getAgentByUserId(userId);
+        const project = await db.getProjectById(projectId);
+        
+        if (userAgent?.lettaAgentId && project?.memoryBlockId) {
+          const user = await db.getUserById(userId);
+          const memoryBlocks = [];
+          
+          // Always include user's human memory block
+          if (user?.memoryBlockId) {
+            memoryBlocks.push(user.memoryBlockId);
+          }
+          
+          // Add the new project memory block
+          memoryBlocks.push(project.memoryBlockId);
+          
+          // Add the new project memory block to agent
+          const lettaClient = agentManager.getClient();
+          await lettaClient.agents.blocks.attach(userAgent.lettaAgentId, project.memoryBlockId);
+        }
+      } catch (memoryError) {
+        console.error('Failed to update agent memory blocks:', memoryError);
+        // Continue - user is assigned even if memory update fails
+      }
+
       res.json({ message: 'User assigned to project successfully' });
     } catch (error) {
       console.error('Error assigning user to project:', error);
@@ -127,6 +144,37 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
       const { userId, projectId } = assignUserSchema.parse(req.body);
 
       await db.removeUserFromProject(userId, projectId);
+
+      // Remove project memory block from user's agent
+      try {
+        const userAgent = await db.getAgentByUserId(userId);
+        const project = await db.getProjectById(projectId);
+        
+        if (userAgent?.lettaAgentId && project?.memoryBlockId) {
+          const user = await db.getUserById(userId);
+          const memoryBlocks = [];
+          
+          // Always include user's human memory block
+          if (user?.memoryBlockId) {
+            memoryBlocks.push(user.memoryBlockId);
+          }
+          
+          // Get all remaining project memory blocks (excluding the removed one)
+          const userProjects = await db.getProjectsByUserId(userId);
+          for (const userProject of userProjects) {
+            if (userProject.memoryBlockId && userProject.id !== projectId) {
+              memoryBlocks.push(userProject.memoryBlockId);
+            }
+          }
+          
+          // Remove project memory block from agent
+          const lettaClient = agentManager.getClient();
+          await lettaClient.agents.blocks.detach(userAgent.lettaAgentId, project.memoryBlockId);
+        }
+      } catch (memoryError) {
+        console.error('Failed to update agent memory blocks:', memoryError);
+        // Continue - user is removed even if memory update fails
+      }
 
       res.json({ message: 'User removed from project successfully' });
     } catch (error) {
@@ -167,25 +215,89 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
 
       // Get user's human memory block
       const user = await db.getUserById(req.user.userId);
-      const memoryBlocks = [];
-      
-      if (user?.memoryBlockId) {
-        memoryBlocks.push(user.memoryBlockId);
-      }
+      const userMemoryBlockId = user?.memoryBlockId;
 
-      // Add selected project memory blocks
+      // Get current agent memory blocks
+      const lettaClient = agentManager.getClient();
+      console.log('Attempting to retrieve agent:', userAgent.lettaAgentId);
+      let currentAgent;
+      let currentMemoryBlocks = [];
+      try {
+        currentAgent = await lettaClient.agents.blocks.list(userAgent.lettaAgentId);
+        currentMemoryBlocks = currentAgent?.memoryBlocks || [];
+        console.log('Successfully retrieved agent, memory blocks:', currentMemoryBlocks);
+      } catch (retrieveError) {
+        console.error('Failed to retrieve agent:', retrieveError);
+        // Continue with empty memory blocks
+      }
+      
+      // User memory blocks should already be attached during agent creation
+      
+      // Get all user's assigned projects
+      const userProjects = await db.getProjectsByUserId(req.user.userId);
+      console.log('User projects:', userProjects);
+      
+      // Determine which blocks to attach/detach
+      const blocksToAttach = [];
+      const blocksToDetach = [];
+      
+      // Find blocks to attach (selected projects not currently attached)
       for (const projectId of projectIds) {
-        const project = await db.getProjectById(projectId);
-        if (project?.memoryBlockId) {
-          memoryBlocks.push(project.memoryBlockId);
+        const project = userProjects.find(p => p.id === projectId);
+        console.log('Checking project for attach:', {
+          projectId,
+          project: project ? { id: project.id, name: project.name, memoryBlockId: project.memory_block_id } : null,
+          hasMemoryBlock: !!project?.memory_block_id,
+          alreadyAttached: currentMemoryBlocks.includes(project?.memory_block_id),
+          willAttach: project?.memory_block_id && !currentMemoryBlocks.includes(project.memory_block_id)
+        });
+        if (project?.memory_block_id && !currentMemoryBlocks.includes(project.memory_block_id)) {
+          blocksToAttach.push(project.memory_block_id);
         }
       }
-
-      // Update agent with user's human memory block + selected project memory blocks
-      const lettaClient = agentManager.getClient();
-      await lettaClient.agents.update(userAgent.lettaAgentId, {
-        memoryBlocks: memoryBlocks
+      
+      // Find blocks to detach (currently attached project blocks not in selected list)
+      for (const memoryBlockId of currentMemoryBlocks) {
+        // Skip user's human memory block
+        if (memoryBlockId === userMemoryBlockId) continue;
+        
+        // Check if this is a project memory block that should be detached
+        const project = userProjects.find(p => p.memory_block_id === memoryBlockId);
+        if (project && !projectIds.includes(project.id)) {
+          blocksToDetach.push(memoryBlockId);
+        }
+      }
+      
+      // Perform attach/detach operations
+      console.log('Memory block operations:', {
+        agentId: userAgent.lettaAgentId,
+        blocksToAttach,
+        blocksToDetach,
+        currentMemoryBlocks,
+        selectedProjectIds: projectIds,
+        userMemoryBlockId,
+        userProjects: userProjects.map(p => ({ id: p.id, name: p.name, memoryBlockId: p.memory_block_id }))
       });
+      
+      for (const blockId of blocksToAttach) {
+        console.log('Attaching memory block:', blockId);
+        try {
+          await lettaClient.agents.blocks.attach(userAgent.lettaAgentId, blockId);
+          console.log('Successfully attached block:', blockId);
+        } catch (attachError) {
+          console.error('Failed to attach block:', blockId, attachError);
+        }
+      }
+      
+      for (const blockId of blocksToDetach) {
+        console.log('Detaching memory block:', blockId);
+        try {
+          await lettaClient.agents.blocks.detach(userAgent.lettaAgentId, blockId);
+          console.log('Successfully detached block:', blockId);
+        } catch (detachError) {
+          console.error('Failed to detach block:', blockId, detachError);
+        }
+      }
 
       res.json({ message: 'Agent memory blocks updated successfully' });
     } catch (error) {
@@ -194,5 +306,33 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
     }
   });
 
+  // Get agent's current memory blocks
+  router.get('/agent-memory-blocks', requireEmployee, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Get user's agent
+      const userAgent = await db.getAgentByUserId(req.user.userId);
+      if (!userAgent || !userAgent.lettaAgentId) {
+        return res.status(404).json({ error: 'User agent not found or not initialized' });
+      }
+
+      // Get agent's memory blocks from Letta
+      const lettaClient = agentManager.getClient();
+      const agent = await lettaClient.agents.retrieve(userAgent.lettaAgentId);
+      
+      res.json({ 
+        memoryBlocks: agent?.memoryBlocks || [],
+        message: 'Agent memory blocks retrieved successfully' 
+      });
+    } catch (error) {
+      console.error('Error getting agent memory blocks:', error);
+      res.status(500).json({ error: 'Failed to get agent memory blocks' });
+    }
+  });
+
   return router;
 };
+

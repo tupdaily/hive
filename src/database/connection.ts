@@ -465,9 +465,11 @@ export class Database {
     await this.waitForInitialization();
     const { error } = await this.supabase
       .from('project_members')
-      .insert({
+      .upsert({
         user_id: userId,
         project_id: projectId
+      }, {
+        onConflict: 'user_id,project_id'
       });
 
     if (error) throw error;

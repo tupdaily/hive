@@ -43,6 +43,8 @@ export class AgentManager {
       const userMemoryBlock = await this.client.blocks.create({
         label: "human",
         value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`,
+        limit: 4000,
+        description: "Stores key details about the person you are conversing with, allowing for more personalized and friend-like conversation."
       });
       userMemoryBlockId = userMemoryBlock.id;
       
@@ -75,6 +77,7 @@ export class AgentManager {
     const memoryBlocks = [{
       label: "persona", 
       value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`,
+      limit: 4000,
       description: "Stores details about your current persona, guiding how you behave and respond. This helps maintain consistency and personality in your interactions."
     }];
 
@@ -84,20 +87,26 @@ export class AgentManager {
       blockIds.push(projectMemoryBlockId);
     }
 
-    // Create agent in Letta with persona, human, and optionally project memory block
+    // Create agent in Letta with persona memory block
     try {
       const lettaAgent = await this.client.agents.create({
         name: agentData.name,
         model: "openai/gpt-4.1",
         embedding: "openai/text-embedding-3-small",
-        memoryBlocks: memoryBlocks,
-        blockIds: blockIds // Attach human and optionally project's memory block
+        memoryBlocks: memoryBlocks
       });
 
       // Update database agent with Letta agent ID
       await this.db.updateAgent(agentId, {
         lettaAgentId: lettaAgent.id
       });
+
+      // Attach memory blocks to the agent
+      console.log('Attaching memory blocks to agent:', lettaAgent.id, 'blocks:', blockIds);
+      for (const blockId of blockIds) {
+        await this.client.agents.blocks.attach(lettaAgent.id, blockId);
+        console.log('Attached block:', blockId);
+      }
 
       // Return the database agent, not the Letta agent
       const updatedAgent = await this.db.getAgentById(agentId);

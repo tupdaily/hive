@@ -48,6 +48,42 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
   }, [])
 
   useEffect(() => {
+    if (userAgent && userProjects.length > 0) {
+      loadAgentMemoryBlocks()
+    }
+  }, [userAgent, userProjects])
+
+  const loadAgentMemoryBlocks = async () => {
+    if (!userAgent?.lettaAgentId) return
+
+    try {
+      const response = await fetch('/api/projects/agent-memory-blocks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const memoryBlocks = data.memoryBlocks || []
+        
+        // Find which projects correspond to the agent's memory blocks
+        const selectedProjectIds = new Set<string>()
+        
+        for (const memoryBlockId of memoryBlocks) {
+          // Find project that has this memory block ID
+          const project = userProjects.find(p => p.memoryBlockId === memoryBlockId)
+          if (project) {
+            selectedProjectIds.add(project.id)
+          }
+        }
+        
+        setSelectedProjects(selectedProjectIds)
+      }
+    } catch (error) {
+      console.error('Error loading agent memory blocks:', error)
+    }
+  }
+
+  useEffect(() => {
     scrollToBottom()
   }, [messages])
 
