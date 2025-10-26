@@ -90,26 +90,6 @@ export class Database {
     };
   }
 
-  async getAllUsers(): Promise<User[]> {
-    await this.waitForInitialization();
-    const { data, error } = await this.supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return data.map(user => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      description: user.description,
-      memoryBlockId: user.memory_block_id,
-      createdAt: new Date(user.created_at),
-      updatedAt: new Date(user.updated_at)
-    }));
-  }
 
   async updateUserMemoryBlock(userId: string, memoryBlockId: string): Promise<void> {
     await this.waitForInitialization();
@@ -246,21 +226,6 @@ export class Database {
     if (error) throw error;
   }
 
-  // Project operations
-  async createProject(project: Omit<Project, 'createdAt' | 'updatedAt'>): Promise<void> {
-    await this.waitForInitialization();
-    const { error } = await this.supabase
-      .from('projects')
-      .insert({
-        id: project.id || uuidv4(),
-        name: project.name,
-        description: project.description,
-        status: project.status,
-        memory_block_id: project.memoryBlockId || null
-      });
-    
-    if (error) throw error;
-  }
 
   async getProjectById(id: string): Promise<Project | null> {
     await this.waitForInitialization();
@@ -283,25 +248,6 @@ export class Database {
     };
   }
 
-  async getAllProjects(): Promise<Project[]> {
-    await this.waitForInitialization();
-    const { data, error } = await this.supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    
-    return data.map(project => ({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      memoryBlockId: project.memory_block_id,
-      createdAt: new Date(project.created_at),
-      updatedAt: new Date(project.updated_at)
-    }));
-  }
 
   async updateProjectMemoryBlock(projectId: string, memoryBlockId: string): Promise<void> {
     await this.waitForInitialization();
@@ -436,6 +382,95 @@ export class Database {
       createdAt: new Date(block.created_at),
       updatedAt: new Date(block.updated_at)
     }));
+  }
+
+  // Project-related methods
+  async createProject(project: {
+    name: string;
+    description: string;
+    memoryBlockId?: string;
+  }): Promise<any> {
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('projects')
+      .insert({
+        name: project.name,
+        description: project.description,
+        memory_block_id: project.memoryBlockId || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getProjectsByUserId(userId: string): Promise<any[]> {
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('project_members')
+      .select(`
+        projects (
+          id,
+          name,
+          description,
+          memory_block_id,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data?.map(item => item.projects).filter(Boolean) || [];
+  }
+
+  async getAllProjects(): Promise<any[]> {
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async addUserToProject(userId: string, projectId: string): Promise<void> {
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('project_members')
+      .insert({
+        user_id: userId,
+        project_id: projectId,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) throw error;
+  }
+
+  async removeUserFromProject(userId: string, projectId: string): Promise<void> {
+    await this.waitForInitialization();
+    const { error } = await this.supabase
+      .from('project_members')
+      .delete()
+      .eq('user_id', userId)
+      .eq('project_id', projectId);
+
+    if (error) throw error;
+  }
+
+  async getAllUsers(): Promise<any[]> {
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('users')
+      .select('id, name, email, role, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   }
 
   close(): void {

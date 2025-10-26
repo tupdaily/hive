@@ -101,6 +101,20 @@
             box-shadow: 0 6px 16px rgba(234, 179, 8, 0.4) !important;
         }
         
+        /* Project selection styles */
+        .project-button.selected {
+            background: #eab308 !important; /* Dark yellow */
+            color: white !important;
+            transform: scale(1.05) translateY(-2px) !important;
+            box-shadow: 0 6px 16px rgba(234, 179, 8, 0.4) !important;
+        }
+        
+        .project-button.selected:hover {
+            background: #ca8a04 !important; /* Even darker yellow on hover */
+            transform: scale(1.08) translateY(-3px) !important;
+            box-shadow: 0 8px 20px rgba(234, 179, 8, 0.6) !important;
+        }
+        
         .chat-input-centered {
             position: absolute;
             left: 50%;
@@ -321,16 +335,10 @@
                     </div>
                 </div>
 
-                <!-- Agents Section -->
-                <div class="mt-8">
-                    <h3 class="text-lg font-semibold text-white mb-4">
-                        <i class="fas fa-robot mr-2"></i>Your Agents
-                    </h3>
-                    <div id="agents-sidebar" class="space-y-2">
-                        <!-- Agents will be loaded here -->
-                    </div>
-                    <button id="create-agent-btn" class="mt-4 w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105">
-                        <i class="fas fa-plus mr-2"></i>Create Agent
+                <!-- Admin Console Section (only for admin users) -->
+                <div id="admin-console-section" class="mt-8 hidden">
+                    <button id="admin-console-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-cog mr-2"></i>Admin Console
                     </button>
                 </div>
             </div>
@@ -387,47 +395,47 @@
 
     </div>
 
-    <!-- Create Agent Modal -->
-    <div id="create-agent-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border-2 border-yellow-400">
-                <div class="text-center mb-6">
-                    <div class="hexagon mx-auto mb-4 relative">
-                        <i class="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
+    <!-- Admin Console Modal -->
+    <div id="admin-console-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-4xl w-full shadow-2xl border-2 border-purple-400">
+            <div class="text-center mb-6">
+                <div class="hexagon mx-auto mb-4 relative">
+                    <i class="fas fa-cog absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Admin Console</h3>
+                <p class="text-purple-100">Manage projects and user assignments</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Projects Management -->
+                <div class="bg-gray-700 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-white mb-4">
+                        <i class="fas fa-project-diagram mr-2"></i>Projects
+                    </h4>
+                    <div id="admin-projects-list" class="space-y-2 mb-4">
+                        <!-- Projects will be loaded here -->
                     </div>
-                    <h3 class="text-2xl font-bold text-white mb-2">Create New Agent</h3>
-                    <p class="text-yellow-100">Build your AI team member</p>
-                </div>
-            <form id="create-agent-form" class="space-y-4">
-                <div>
-                    <label class="block text-yellow-100 text-sm font-semibold mb-2" for="agent-name">
-                        <i class="fas fa-tag mr-2"></i>Agent Name
-                    </label>
-                    <input class="w-full px-4 py-3 rounded-xl border-2 border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white/90 text-gray-800" 
-                           id="agent-name" type="text" required placeholder="Enter agent name">
-                </div>
-                <div>
-                    <label class="block text-yellow-100 text-sm font-semibold mb-2" for="agent-personality">
-                        <i class="fas fa-user mr-2"></i>Personality
-                    </label>
-                    <textarea class="w-full px-4 py-3 rounded-xl border-2 border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white/90 text-gray-800 resize-none" 
-                              id="agent-personality" rows="3" required placeholder="Describe the agent's personality and communication style"></textarea>
-                </div>
-                <div>
-                    <label class="block text-yellow-100 text-sm font-semibold mb-2" for="agent-description">
-                        <i class="fas fa-briefcase mr-2"></i>What do you want me to do?
-                    </label>
-                    <textarea class="w-full px-4 py-3 rounded-xl border-2 border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white/90 text-gray-800 resize-none" 
-                              id="agent-description" rows="3" required placeholder="Describe what you want this agent to help you with"></textarea>
-                </div>
-                <div class="flex justify-center space-x-4 pt-4">
-                    <button type="button" id="cancel-create-agent" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-full transition-colors duration-300">
-                        Cancel
+                    <button id="create-project-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300">
+                        <i class="fas fa-plus mr-2"></i>Create Project
                     </button>
-                        <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg">
-                            <i class="fas fa-plus mr-2"></i>Create Agent
-                        </button>
                 </div>
-            </form>
+                
+                <!-- User Management -->
+                <div class="bg-gray-700 rounded-xl p-6">
+                    <h4 class="text-lg font-semibold text-white mb-4">
+                        <i class="fas fa-users mr-2"></i>Users
+                    </h4>
+                    <div id="admin-users-list" class="space-y-2 mb-4">
+                        <!-- Users will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end mt-6">
+                <button id="close-admin-console" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300">
+                    <i class="fas fa-times mr-2"></i>Close
+                </button>
+            </div>
         </div>
     </div>
 

@@ -3,8 +3,9 @@ class HiveApp {
         this.apiBase = '/api';
         this.token = localStorage.getItem('token');
         this.user = JSON.parse(localStorage.getItem('user') || 'null');
-        this.agents = [];
-        this.selectedAgentId = null;
+        this.userAgent = null; // Single agent per user
+        this.selectedProjects = new Set(); // Set of selected project IDs
+        this.userProjects = []; // Projects assigned to user
         
         this.init();
     }
@@ -27,10 +28,9 @@ class HiveApp {
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => this.logout());
         
-        // Agent management
-        document.getElementById('create-agent-btn').addEventListener('click', () => this.showCreateAgentModal());
-        document.getElementById('create-agent-form').addEventListener('submit', (e) => this.handleCreateAgent(e));
-        document.getElementById('cancel-create-agent').addEventListener('click', () => this.hideCreateAgentModal());
+        // Admin console
+        document.getElementById('admin-console-btn').addEventListener('click', () => this.showAdminConsole());
+        document.getElementById('close-admin-console').addEventListener('click', () => this.hideAdminConsole());
         
         // Chat interface
         document.getElementById('chat-form').addEventListener('submit', (e) => this.handleChatSubmit(e));
@@ -50,21 +50,25 @@ class HiveApp {
             // Check if user has completed questionnaire
             try {
                 const response = await fetch(`${this.apiBase}/auth/profile`, {
-                    method: 'GET',
                     headers: { 'Authorization': `Bearer ${this.token}` }
                 });
-                const data = await response.json();
                 
-                if (data.user && !data.user.hasDescription) {
-                    this.showQuestionnaire();
+                if (response.ok) {
+                    const data = await response.json();
+                    this.user = data.user;
+                    
+                    if (!data.user.hasDescription) {
+                        this.showQuestionnaire();
+                    } else {
+                        await this.showDashboard();
+                        await this.loadUserData();
+                    }
                 } else {
-                    this.showDashboard();
-                    this.loadUserData();
+                    this.showLogin();
                 }
             } catch (error) {
                 console.error('Error checking user profile:', error);
-            this.showDashboard();
-            this.loadUserData();
+                this.showLogin();
             }
         } else {
             this.showLogin();
@@ -73,47 +77,17 @@ class HiveApp {
 
     async handleLogin(e) {
         e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
         try {
             const response = await fetch(`${this.apiBase}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-
-            const data = await response.json();
             
-            if (response.ok) {
-                this.token = data.token;
-                this.user = data.user;
-                localStorage.setItem('token', this.token);
-                localStorage.setItem('user', JSON.stringify(this.user));
-                this.showDashboard();
-                this.loadUserData();
-            } else {
-                this.showError(data.error);
-            }
-        } catch (error) {
-            this.showError('Login failed. Please try again.');
-        }
-    }
-
-    async handleRegister(e) {
-        e.preventDefault();
-        const name = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-        const role = document.getElementById('reg-role').value;
-
-        try {
-            const response = await fetch(`${this.apiBase}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, role })
-            });
-
             const data = await response.json();
             
             if (response.ok) {
@@ -122,41 +96,70 @@ class HiveApp {
                 localStorage.setItem('token', this.token);
                 localStorage.setItem('user', JSON.stringify(this.user));
                 
-                // Check if user needs to complete questionnaire
-                try {
-                    const profileResponse = await fetch(`${this.apiBase}/auth/profile`, {
-                        method: 'GET',
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
-                    const profileData = await profileResponse.json();
-                    
-                    if (profileData.user && !profileData.user.hasDescription) {
-                        this.showQuestionnaire();
-                    } else {
-                        this.showDashboard();
-                        this.loadUserData();
-                    }
-                } catch (error) {
-                    console.error('Error checking user profile:', error);
-                this.showDashboard();
-                this.loadUserData();
+                // Check if user has description
+                if (!data.user.hasDescription) {
+                    this.showQuestionnaire();
+                } else {
+                    await this.showDashboard();
+                    await this.loadUserData();
                 }
             } else {
-                this.showError(data.error);
+                this.showError(`Login failed: ${data.error}`);
             }
         } catch (error) {
+            console.error('Login error:', error);
+            this.showError('Login failed. Please try again.');
+        }
+    }
+
+    async handleRegister(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+        const role = document.getElementById('reg-role').value;
+        
+        try {
+            const response = await fetch(`${this.apiBase}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.token = data.token;
+                this.user = data.user;
+                localStorage.setItem('token', this.token);
+                localStorage.setItem('user', JSON.stringify(this.user));
+                
+                // Always show questionnaire for new users
+                this.showQuestionnaire();
+            } else {
+                this.showError(`Registration failed: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
             this.showError('Registration failed. Please try again.');
         }
     }
 
     async handleQuestionnaire(e) {
         e.preventDefault();
-        const description = document.getElementById('user-description').value;
+        
+        const description = document.getElementById('user-description').value.trim();
+        
+        if (!description || description.length < 10) {
+            this.showError('Please provide a description of at least 10 characters.');
+            return;
+        }
         
         try {
             const response = await fetch(`${this.apiBase}/auth/questionnaire`, {
                 method: 'POST',
-                headers: {
+                headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.token}`
                 },
@@ -166,312 +169,18 @@ class HiveApp {
             const data = await response.json();
             
             if (response.ok) {
+                this.user.description = description;
+                localStorage.setItem('user', JSON.stringify(this.user));
                 this.showSuccess('Questionnaire submitted successfully!');
-                this.showDashboard();
-                this.loadUserData();
+                await this.showDashboard();
+                await this.loadUserData();
             } else {
                 this.showError(data.error || 'Failed to submit questionnaire. Please try again.');
             }
         } catch (error) {
+            console.error('Questionnaire error:', error);
             this.showError('Failed to submit questionnaire. Please try again.');
         }
-    }
-
-    async loadUserData() {
-        await this.loadAgents();
-        this.loadProjects();
-    }
-
-    loadProjects() {
-        // For now, show placeholder projects
-        const projectsList = document.getElementById('projects-list');
-        projectsList.innerHTML = `
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="ecommerce">
-                <i class="fas fa-project-diagram mr-2"></i>E-commerce Platform
-            </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="mobile">
-                <i class="fas fa-mobile-alt mr-2"></i>Mobile App
-            </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="analytics">
-                <i class="fas fa-database mr-2"></i>Data Analytics
-            </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium" data-project="create">
-                <i class="fas fa-plus mr-2"></i>Create New Project
-            </div>
-        `;
-
-        // Add event listeners to project buttons
-        projectsList.querySelectorAll('[data-project]').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const projectId = e.currentTarget.getAttribute('data-project');
-                this.selectProject(projectId);
-            });
-        });
-    }
-
-    selectProject(projectId) {
-        console.log('Selected project:', projectId);
-        if (projectId === 'create') {
-            // Handle create new project
-            this.addMessageToChat('Create New Project clicked! This feature will be implemented soon.', 'assistant');
-        } else {
-            // Handle project selection
-            this.addMessageToChat(`Selected project: ${projectId}. This feature will be implemented soon.`, 'assistant');
-        }
-    }
-
-    async loadAgents() {
-        try {
-            const response = await fetch(`${this.apiBase}/agents/my-agents`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.agents = data.agents || [];
-                this.renderAgentsSidebar();
-            }
-        } catch (error) {
-            console.error('Failed to load agents:', error);
-        }
-    }
-
-    renderAgentsSidebar() {
-        const agentsSidebar = document.getElementById('agents-sidebar');
-        if (this.agents.length === 0) {
-            agentsSidebar.innerHTML = '<p class="text-yellow-200 text-sm text-center">No agents yet</p>';
-            return;
-        }
-
-        agentsSidebar.innerHTML = this.agents.map(agent => {
-            const isSelected = agent.id === this.selectedAgentId;
-            const selectedClass = isSelected ? 'bg-yellow-500 text-white shadow-lg transform scale-105' : 'bg-yellow-200 text-gray-800';
-            
-            return `
-                <div class="project-button p-3 text-center font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedClass}" 
-                     data-agent-id="${agent.id}">
-                    <i class="fas fa-bee mr-2"></i>${agent.name}
-                </div>
-            `;
-        }).join('');
-
-        // Add event listeners to agent buttons
-        agentsSidebar.querySelectorAll('[data-agent-id]').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const agentId = e.currentTarget.getAttribute('data-agent-id');
-                this.selectAgent(agentId);
-            });
-        });
-    }
-
-    selectAgent(agentId) {
-        console.log('selectAgent called with:', agentId);
-        console.log('Available agents:', this.agents);
-        
-        // Set the selected agent as active
-        this.selectedAgentId = agentId;
-        const agent = this.agents.find(a => a.id === agentId);
-        
-        console.log('Found agent:', agent);
-        console.log('Selected agent ID:', this.selectedAgentId);
-        
-        if (agent) {
-            this.addMessageToChat(`Switched to ${agent.name}. How can I help you?`, 'assistant');
-            
-            // Re-render the sidebar to show the new selection
-            this.renderAgentsSidebar();
-        } else {
-            console.error('Agent not found:', agentId);
-        }
-    }
-
-    updateAgentSelection() {
-        // Update the visual indication of which agent is selected
-        const agentButtons = document.querySelectorAll('#agents-sidebar .project-button');
-        agentButtons.forEach(button => {
-            button.classList.remove('ring-2', 'ring-yellow-400', 'bg-yellow-200');
-        });
-
-        if (this.selectedAgentId) {
-            const selectedButton = document.querySelector(`[onclick="app.selectAgent('${this.selectedAgentId}')"]`);
-            if (selectedButton) {
-                selectedButton.classList.add('ring-2', 'ring-yellow-400', 'bg-yellow-200');
-            }
-        }
-    }
-
-    async loadAdminStats() {
-        try {
-            const response = await fetch(`${this.apiBase}/admin/stats`, {
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                document.getElementById('total-users').textContent = data.totalUsers;
-                document.getElementById('total-agents').textContent = data.totalAgents;
-                document.getElementById('active-projects').textContent = data.activeProjects;
-                document.getElementById('memory-blocks').textContent = data.totalMemoryBlocks;
-            }
-        } catch (error) {
-            console.error('Failed to load admin stats:', error);
-        }
-    }
-
-    renderAgents() {
-        const container = document.getElementById('agents-list');
-        container.innerHTML = '';
-
-        if (this.agents.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">No agents created yet. Create your first agent to get started!</p>';
-            return;
-        }
-
-        this.agents.forEach(agent => {
-            const agentCard = document.createElement('div');
-            agentCard.className = 'bg-gray-50 p-4 rounded-lg border';
-            agentCard.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900">${agent.name}</h3>
-                        <p class="text-sm text-gray-600 mt-1">${agent.personality}</p>
-                        <div class="mt-2">
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">${agent.workPreferences.join(', ')}</span>
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button onclick="app.queryAgent('${agent.id}')" class="bg-blue-500 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded">
-                            Query
-                        </button>
-                        <button onclick="app.deleteAgent('${agent.id}')" class="bg-red-500 hover:bg-red-700 text-white text-sm px-3 py-1 rounded">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(agentCard);
-        });
-    }
-
-    updateAgentSelect() {
-        const select = document.getElementById('agent-select');
-        select.innerHTML = '<option value="">Choose an agent...</option>';
-        
-        this.agents.forEach(agent => {
-            const option = document.createElement('option');
-            option.value = agent.id;
-            option.textContent = agent.name;
-            select.appendChild(option);
-        });
-    }
-
-    async handleCreateAgent(e) {
-        e.preventDefault();
-        const name = document.getElementById('agent-name').value;
-        const personality = document.getElementById('agent-personality').value;
-        const description = document.getElementById('agent-description').value;
-
-        try {
-            const response = await fetch(`${this.apiBase}/agents`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify({ name, personality, description })
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.hideCreateAgentModal();
-                this.loadAgents();
-                this.showSuccess('Agent created successfully!');
-            } else {
-                this.showError(data.error);
-            }
-        } catch (error) {
-            this.showError('Failed to create agent. Please try again.');
-        }
-    }
-
-    async sendQuery() {
-        const agentId = document.getElementById('agent-select').value;
-        const query = document.getElementById('query-input').value;
-
-        if (!agentId || !query) {
-            this.showError('Please select an agent and enter a query.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`${this.apiBase}/agents/${agentId}/query`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify({ query })
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.displayQueryResponse(data);
-            } else {
-                this.showError(data.error);
-            }
-        } catch (error) {
-            this.showError('Query failed. Please try again.');
-        }
-    }
-
-    displayQueryResponse(response) {
-        const container = document.getElementById('query-response');
-        container.innerHTML = `
-            <div class="bg-white p-4 rounded-lg border-l-4 border-blue-500">
-                <div class="flex items-start">
-                    <i class="fas fa-robot text-blue-500 text-xl mr-3 mt-1"></i>
-                    <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900 mb-2">Agent Response</h4>
-                        <p class="text-gray-700 mb-3">${response.response}</p>
-                        <div class="text-xs text-gray-500">
-                            <p>Agent: ${response.agentId}</p>
-                            <p>Time: ${new Date(response.timestamp).toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.classList.remove('hidden');
-    }
-
-    async deleteAgent(agentId) {
-        if (!confirm('Are you sure you want to delete this agent?')) return;
-
-        try {
-            const response = await fetch(`${this.apiBase}/agents/${agentId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${this.token}` }
-            });
-
-            if (response.ok) {
-                this.loadAgents();
-                this.showSuccess('Agent deleted successfully!');
-            } else {
-                const data = await response.json();
-                this.showError(data.error);
-            }
-        } catch (error) {
-            this.showError('Failed to delete agent. Please try again.');
-        }
-    }
-
-    queryAgent(agentId) {
-        document.getElementById('agent-select').value = agentId;
-        document.getElementById('query-input').focus();
     }
 
     showLogin() {
@@ -486,86 +195,235 @@ class HiveApp {
         document.getElementById('questionnaire').classList.remove('hidden');
     }
 
-    showDashboard() {
+    async showDashboard() {
         document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('chatbot-interface').classList.remove('hidden');
         document.getElementById('questionnaire').classList.add('hidden');
+        document.getElementById('chatbot-interface').classList.remove('hidden');
+        
         this.updateUserInfo();
-        this.loadUserData();
+        
+        // Show admin console button if user is admin
+        if (this.user.role === 'admin') {
+            document.getElementById('admin-console-section').classList.remove('hidden');
+        }
     }
 
     updateUserInfo() {
-        if (this.user) {
-            document.getElementById('user-name').textContent = this.user.name;
-            document.getElementById('user-role').textContent = this.user.role;
+        document.getElementById('user-name').textContent = this.user.name;
+        document.getElementById('user-role').textContent = this.user.role;
+    }
+
+    async loadUserData() {
+        await this.loadUserAgent();
+        await this.loadUserProjects();
+        await this.resetProjectMemoryBlocks(); // Reset memory blocks on login
+    }
+
+    async loadUserAgent() {
+        try {
+            const response = await fetch(`${this.apiBase}/agents/my-agents`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Get the first agent (or create one if none exist)
+                this.userAgent = data.agents && data.agents.length > 0 ? data.agents[0] : null;
+                
+                if (!this.userAgent) {
+                    // Create a default agent for the user
+                    await this.createDefaultAgent();
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load user agent:', error);
         }
+    }
+
+    async createDefaultAgent() {
+        try {
+            const response = await fetch(`${this.apiBase}/agents`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({
+                    name: `${this.user.name}'s Assistant`,
+                    personality: 'Helpful, professional, and knowledgeable',
+                    description: this.user.description || 'General assistance and support'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.userAgent = data.agent;
+                this.addMessageToChat(`Welcome! I'm ${this.userAgent.name}, your AI assistant. How can I help you today?`, 'assistant');
+            }
+        } catch (error) {
+            console.error('Failed to create default agent:', error);
+        }
+    }
+
+    async loadUserProjects() {
+        try {
+            const response = await fetch(`${this.apiBase}/projects/my-projects`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                this.userProjects = data.projects || [];
+                this.renderProjectsSidebar();
+            }
+        } catch (error) {
+            console.error('Failed to load user projects:', error);
+        }
+    }
+
+    renderProjectsSidebar() {
+        const projectsList = document.getElementById('projects-list');
+        
+        if (this.userProjects.length === 0) {
+            projectsList.innerHTML = '<p class="text-yellow-200 text-sm text-center">No projects assigned</p>';
+            return;
+        }
+
+        projectsList.innerHTML = this.userProjects.map(project => {
+            const isSelected = this.selectedProjects.has(project.id);
+            const selectedClass = isSelected ? 'selected' : '';
+            
+            return `
+                <div class="project-button p-3 text-center text-gray-800 font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedClass}" 
+                     data-project-id="${project.id}">
+                    <i class="fas fa-project-diagram mr-2"></i>${project.name}
+                </div>
+            `;
+        }).join('');
+
+        // Add event listeners to project buttons
+        projectsList.querySelectorAll('[data-project-id]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const projectId = e.currentTarget.getAttribute('data-project-id');
+                this.toggleProjectSelection(projectId);
+            });
+        });
+    }
+
+    toggleProjectSelection(projectId) {
+        if (this.selectedProjects.has(projectId)) {
+            this.selectedProjects.delete(projectId);
+            this.removeProjectMemoryBlock(projectId);
+        } else {
+            this.selectedProjects.add(projectId);
+            this.addProjectMemoryBlock(projectId);
+        }
+        
+        this.renderProjectsSidebar();
+    }
+
+    async resetProjectMemoryBlocks() {
+        // Reset all project memory blocks on login
+        // This would involve removing all project memory blocks from the user's agent
+        console.log('Resetting project memory blocks on login');
+        // Implementation would depend on the Letta API for removing memory blocks
+    }
+
+    async addProjectMemoryBlock(projectId) {
+        const project = this.userProjects.find(p => p.id === projectId);
+        if (project && this.userAgent) {
+            console.log(`Adding memory block for project: ${project.name}`);
+            // Implementation would involve adding the project's memory block to the user's agent
+        }
+    }
+
+    async removeProjectMemoryBlock(projectId) {
+        const project = this.userProjects.find(p => p.id === projectId);
+        if (project && this.userAgent) {
+            console.log(`Removing memory block for project: ${project.name}`);
+            // Implementation would involve removing the project's memory block from the user's agent
+        }
+    }
+
+    showAdminConsole() {
+        document.getElementById('admin-console-modal').classList.remove('hidden');
+        this.loadAdminData();
+    }
+
+    hideAdminConsole() {
+        document.getElementById('admin-console-modal').classList.add('hidden');
+    }
+
+    async loadAdminData() {
+        // Load projects and users for admin console
+        console.log('Loading admin data...');
+        // Implementation would load all projects and users
     }
 
     async handleChatSubmit(e) {
         e.preventDefault();
+        
         const input = document.getElementById('chat-input');
         const message = input.value.trim();
         
         if (!message) return;
         
-        // Move input to bottom when sending a message
+        // Move chat input to bottom on first message
         const container = document.getElementById('chat-input-container');
-        container.classList.remove('chat-input-centered');
-        container.classList.add('chat-input-bottom');
-        input.classList.add('chat-input-focused');
+        if (container.classList.contains('chat-input-centered')) {
+            container.classList.remove('chat-input-centered');
+            container.classList.add('chat-input-bottom');
+        }
         
         // Add user message to chat
         this.addMessageToChat(message, 'user');
+        
+        // Clear input
         input.value = '';
         this.autoResizeTextarea({ target: input });
         
         // Show typing indicator
         this.showTypingIndicator();
         
+        // Get AI response
         try {
-            // For now, we'll use a simple response
-            // In a real implementation, this would call your AI agent
             const response = await this.getAIResponse(message);
             this.hideTypingIndicator();
             this.addMessageToChat(response, 'assistant');
         } catch (error) {
+            console.error('Error getting AI response:', error);
             this.hideTypingIndicator();
-            this.addMessageToChat('Sorry, I encountered an error. Please try again.', 'assistant');
+            this.addMessageToChat('I apologize, but I encountered an error. Please try again.', 'assistant');
         }
     }
 
     addMessageToChat(message, sender) {
         const chatMessages = document.getElementById('chat-messages');
         const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
         
-        const bubbleClass = sender === 'user' 
-            ? 'bg-yellow-400 text-white max-w-md rounded-2xl p-4 shadow-lg'
-            : 'chat-bubble rounded-2xl p-4 max-w-md';
-        
-        messageDiv.innerHTML = `
-            <div class="${bubbleClass}">
-                <div class="flex items-start">
-                    ${sender === 'assistant' ? `
-                        <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                            <i class="fas fa-bee text-gray-800 text-sm"></i>
-                        </div>
-                    ` : ''}
-                    <div class="flex-1">
-                        <p class="font-medium">${message}</p>
-                    </div>
+        if (sender === 'user') {
+            messageDiv.className = 'flex justify-end mb-4';
+            messageDiv.innerHTML = `
+                <div class="bg-yellow-400 text-gray-800 px-6 py-3 rounded-2xl max-w-xs lg:max-w-md shadow-lg">
+                    ${message}
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            messageDiv.className = 'flex justify-start mb-4';
+            messageDiv.innerHTML = `
+                <div class="chat-bubble text-gray-800 px-6 py-3 rounded-2xl max-w-xs lg:max-w-md shadow-lg">
+                    <i class="fas fa-bee mr-2 text-yellow-500"></i>${message}
+                </div>
+            `;
+        }
         
         chatMessages.appendChild(messageDiv);
-        // Scroll to bottom with smooth animation
-        setTimeout(() => {
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
-        }, 100);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     showTypingIndicator() {
@@ -574,21 +432,14 @@ class HiveApp {
         typingDiv.id = 'typing-indicator';
         typingDiv.className = 'flex justify-start mb-4';
         typingDiv.innerHTML = `
-            <div class="chat-bubble rounded-2xl p-4 max-w-md">
-                <div class="flex items-start">
-                    <div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        <i class="fas fa-bee text-gray-800 text-sm"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex space-x-1">
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                        </div>
-                    </div>
-                </div>
+            <div class="chat-bubble text-gray-800 px-6 py-3 rounded-2xl shadow-lg">
+                <i class="fas fa-bee mr-2 text-yellow-500"></i>
+                <span class="typing-dots">
+                    <span>.</span><span>.</span><span>.</span>
+                </span>
             </div>
         `;
+        
         chatMessages.appendChild(typingDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -601,21 +452,12 @@ class HiveApp {
     }
 
     async getAIResponse(message) {
-        try {
-            // Check if user has any agents
-            if (this.agents.length === 0) {
-                return "I don't have any AI agents available yet. Please create an agent first!";
-            }
+        if (!this.userAgent) {
+            return "I don't have an AI agent available yet. Please contact an administrator.";
+        }
 
-            // Use selected agent or default to first agent
-            let agentId = this.selectedAgentId;
-            if (!agentId) {
-                agentId = this.agents[0].id;
-                this.selectedAgentId = agentId;
-                this.updateAgentSelection();
-            }
-            
-            const response = await fetch(`${this.apiBase}/agents/${agentId}/query`, {
+        try {
+            const response = await fetch(`${this.apiBase}/agents/${this.userAgent.id}/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -625,7 +467,7 @@ class HiveApp {
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
                 return data.response || "I received your message but couldn't generate a response.";
             } else {
@@ -645,65 +487,83 @@ class HiveApp {
     }
 
     handleChatInputFocus(e) {
-        const textarea = e.target;
-        
-        // Just change text alignment when focused, don't move the container
-        textarea.classList.add('chat-input-focused');
+        e.target.classList.add('chat-input-focused');
     }
 
     handleChatInputBlur(e) {
-        const textarea = e.target;
-        
-        // Don't move back to center once chat has started - keep it at bottom
-        // Only remove the focused styling
-        textarea.classList.remove('chat-input-focused');
+        e.target.classList.remove('chat-input-focused');
     }
 
     toggleAuthForms() {
-        document.getElementById('login-form-element').classList.toggle('hidden');
-        document.getElementById('register-form').classList.toggle('hidden');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        
+        if (loginForm.classList.contains('hidden')) {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        } else {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        }
     }
 
-    showCreateAgentModal() {
-        document.getElementById('create-agent-modal').classList.remove('hidden');
+    showSuccess(message) {
+        this.showNotification(message, 'success');
     }
 
-    hideCreateAgentModal() {
-        document.getElementById('create-agent-modal').classList.add('hidden');
-        document.getElementById('create-agent-form').reset();
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+            type === 'success' 
+                ? 'bg-green-500 text-white' 
+                : 'bg-red-500 text-white'
+        }`;
+        
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     logout() {
         this.token = null;
         this.user = null;
+        this.userAgent = null;
+        this.selectedProjects.clear();
+        this.userProjects = [];
+        
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        
         this.showLogin();
-    }
-
-    showError(message) {
-        alert(`Error: ${message}`);
-    }
-
-    showSuccess(message) {
-        alert(`Success: ${message}`);
-    }
-
-    // Admin functions
-    async showProjects() {
-        alert('Project management feature coming soon!');
-    }
-
-    async showMemory() {
-        alert('Memory management feature coming soon!');
-    }
-
-    async showAllAgents() {
-        alert('All agents view coming soon!');
     }
 }
 
 // Initialize the app when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new HiveApp();
-});
+const app = new HiveApp();
+
+

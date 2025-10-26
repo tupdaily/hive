@@ -8,6 +8,7 @@ import { AgentManager } from './ai/agentManager';
 import { createAuthRoutes } from './routes/auth';
 import { createAgentRoutes } from './routes/agents';
 import { createAdminRoutes } from './routes/admin';
+import { createProjectRoutes } from './routes/projects';
 
 // Load environment variables
 dotenv.config();
@@ -69,6 +70,7 @@ export class App {
     this.app.use('/api/auth', createAuthRoutes(this.authService, this.db));
     this.app.use('/api/agents', createAgentRoutes(this.agentManager, this.authService));
     this.app.use('/api/admin', createAdminRoutes(this.db, this.agentManager, this.authService));
+    this.app.use('/api/projects', createProjectRoutes(this.db));
 
     // Serve the main app
     this.app.get('/', (req, res) => {
