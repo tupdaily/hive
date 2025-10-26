@@ -79,6 +79,47 @@ export class AgentManager {
       value: `I am an agent that helps with the company's needs with the following personality: ${agentData.personality}. My role is to: ${agentData.description}`,
       limit: 4000,
       description: "Stores details about your current persona, guiding how you behave and respond. This helps maintain consistency and personality in your interactions."
+    }, {
+      label: "archival_policies",
+      value: `
+When to insert into archival:
+- User preferences and important facts about the user
+- Technical specifications and reference information
+- Significant decisions or outcomes from conversations
+- Significant progress is made towards one or more tasks in one of the projects the user is a member of
+- Significant events like meetings are arranged
+- To summarize user contributions each day
+
+When NOT to insert:
+- Temporary conversational context
+- Information already stored
+- Trivial details or pleasantries
+
+Search strategies:
+- Use natural language questions for best results
+- Include tags when filtering by category
+- Try semantic variations if first search doesn't find what you need
+
+Tagging:
+- Use tags to categorize information for easier retrieval
+- Tags should be specific and descriptive
+- Tags should be added to the information when it is inserted into archival memory
+- When users make significant progress on a task in a project, add the project name and user's name as tags to the information
+      `,
+      limit: 4000,
+      description: "Defines policies for when and how to store information in archival memory, ensuring important information is preserved while avoiding clutter."
+    }, {
+      label: "archival_tracking",
+      value: `
+Query patterns: 
+Recent searches: 
+Success rate: 
+Frequently searched topics: []
+Common patterns: 
+Improvements needed: 
+      `,
+      limit: 4000,
+      description: "Tracks archival memory usage patterns, search success rates, and identifies areas for improvement in memory management."
     }];
 
     const blockIds = [userMemoryBlockId];
@@ -93,7 +134,7 @@ export class AgentManager {
         name: agentData.name,
         model: "openai/gpt-4.1",
         embedding: "openai/text-embedding-3-small",
-        memoryBlocks: memoryBlocks
+        memoryBlocks: memoryBlocks,
       });
 
       // Update database agent with Letta agent ID
