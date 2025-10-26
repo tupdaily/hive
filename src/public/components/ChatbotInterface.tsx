@@ -26,6 +26,12 @@ interface Message {
   timestamp: Date
 }
 
+interface ProjectMember {
+  id: string
+  name: string
+  email?: string
+}
+
 const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({ 
   user, 
   token, 
@@ -39,8 +45,11 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
   const [userProjects, setUserProjects] = useState<any[]>([])
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
   const [chatMovedToBottom, setChatMovedToBottom] = useState(false)
-  const { showSuccess, showError, NotificationContainer } = useNotification()
+  const { showError, NotificationContainer } = useNotification()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set())
+  const [projectMembersMap, setProjectMembersMap] = useState<Record<string, ProjectMember[]>>({})
 
   useEffect(() => {
     loadUserAgent()
@@ -91,14 +100,13 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
   }
 
   useEffect(() => {
-    scrollToBottom()
+    // Only scroll to bottom when new messages are added, not on initial load
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
   }, [messages])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const loadUserAgent = async () => {
+    const loadUserAgent = async () => {
     try {
       const response = await fetch('/api/agents/my-agent', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -235,78 +243,82 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
     }
   }
 
+  // Toggle expanded state for project and load members lazily
+  const handleProjectClick = async (projectId: string) => {
+    // toggle selection as before
+    toggleProjectSelection(projectId)
+
+    const newExpanded = new Set(expandedProjects)
+    if (newExpanded.has(projectId)) {
+      newExpanded.delete(projectId)
+      setExpandedProjects(newExpanded)
+      return
+    }
+
+    newExpanded.add(projectId)
+    setExpandedProjects(newExpanded)
+
+    // Load members if not already loaded
+    if (!projectMembersMap[projectId]) {
+      try {
+        const resp = await fetch(`/api/projects/${projectId}/members`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (resp.ok) {
+          const data = await resp.json()
+          // Expecting data.members as array
+          setProjectMembersMap(prev => ({ ...prev, [projectId]: data.members || [] }))
+        } else {
+          console.error('Failed to load project members for', projectId)
+          setProjectMembersMap(prev => ({ ...prev, [projectId]: [] }))
+        }
+      } catch (err) {
+        console.error('Error loading project members:', err)
+        setProjectMembersMap(prev => ({ ...prev, [projectId]: [] }))
+      }
+    }
+  }
+
   return (
-    <div className="min-h-screen honeycomb-bg honeycomb-pattern relative overflow-hidden">
+    <div className="min-h-screen honeycomb-bg honeycomb-pattern flex flex-col">
       {/* Floating Honeycombs Background */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Top Row */}
-        <div className="hexagon honeycomb-float absolute top-8 left-4 honeycomb-pulse" style={{animationDelay: '0s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-1/4 honeycomb-pulse" style={{animationDelay: '0.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-1/2 honeycomb-pulse" style={{animationDelay: '0.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 left-3/4 honeycomb-pulse" style={{animationDelay: '0.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-8 right-4 honeycomb-pulse" style={{animationDelay: '1.2s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[5%] left-[5%] honeycomb-pulse" style={{animationDelay: '0s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[5%] left-[25%] honeycomb-pulse" style={{animationDelay: '0.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[5%] left-[45%] honeycomb-pulse" style={{animationDelay: '0.6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[5%] left-[65%] honeycomb-pulse" style={{animationDelay: '0.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[5%] left-[85%] honeycomb-pulse" style={{animationDelay: '1.2s'}}></div>
         
-        {/* Second Row */}
-        <div className="hexagon honeycomb-float absolute top-24 left-8 honeycomb-pulse" style={{animationDelay: '1.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 left-1/3 honeycomb-pulse" style={{animationDelay: '1.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 left-2/3 honeycomb-pulse" style={{animationDelay: '2.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-24 right-8 honeycomb-pulse" style={{animationDelay: '2.4s'}}></div>
-        
-        {/* Third Row */}
-        <div className="hexagon honeycomb-float absolute top-40 left-12 honeycomb-pulse" style={{animationDelay: '2.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-1/5 honeycomb-pulse" style={{animationDelay: '3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-2/5 honeycomb-pulse" style={{animationDelay: '3.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-3/5 honeycomb-pulse" style={{animationDelay: '3.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 left-4/5 honeycomb-pulse" style={{animationDelay: '3.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 right-12 honeycomb-pulse" style={{animationDelay: '4.2s'}}></div>
-        
-        {/* Middle Top */}
-        <div className="hexagon honeycomb-float absolute top-1/3 left-6 honeycomb-pulse" style={{animationDelay: '4.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/6 honeycomb-pulse" style={{animationDelay: '4.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/3 honeycomb-pulse" style={{animationDelay: '5.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-1/2 honeycomb-pulse" style={{animationDelay: '5.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-2/3 honeycomb-pulse" style={{animationDelay: '5.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 left-5/6 honeycomb-pulse" style={{animationDelay: '6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/3 right-6 honeycomb-pulse" style={{animationDelay: '6.3s'}}></div>
+        {/* Middle Section */}
+        <div className="hexagon honeycomb-float absolute top-[25%] left-[15%] honeycomb-pulse" style={{animationDelay: '1.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[25%] left-[35%] honeycomb-pulse" style={{animationDelay: '1.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[25%] left-[55%] honeycomb-pulse" style={{animationDelay: '2.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[25%] left-[75%] honeycomb-pulse" style={{animationDelay: '2.4s'}}></div>
         
         {/* Center */}
-        <div className="hexagon honeycomb-float absolute top-1/2 left-10 honeycomb-pulse" style={{animationDelay: '6.6s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-1/8 honeycomb-pulse" style={{animationDelay: '6.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-3/8 honeycomb-pulse" style={{animationDelay: '7.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-5/8 honeycomb-pulse" style={{animationDelay: '7.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 left-7/8 honeycomb-pulse" style={{animationDelay: '7.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-1/2 right-10 honeycomb-pulse" style={{animationDelay: '8.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[45%] left-[10%] honeycomb-pulse" style={{animationDelay: '2.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[45%] left-[30%] honeycomb-pulse" style={{animationDelay: '3.0s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[45%] left-[50%] honeycomb-pulse" style={{animationDelay: '3.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[45%] left-[70%] honeycomb-pulse" style={{animationDelay: '3.6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[45%] left-[90%] honeycomb-pulse" style={{animationDelay: '3.9s'}}></div>
         
-        {/* Middle Bottom */}
-        <div className="hexagon honeycomb-float absolute top-2/3 left-8 honeycomb-pulse" style={{animationDelay: '8.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-1/4 honeycomb-pulse" style={{animationDelay: '8.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-1/2 honeycomb-pulse" style={{animationDelay: '9s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 left-3/4 honeycomb-pulse" style={{animationDelay: '9.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-2/3 right-8 honeycomb-pulse" style={{animationDelay: '9.6s'}}></div>
+        {/* Bottom Section */}
+        <div className="hexagon honeycomb-float absolute top-[65%] left-[20%] honeycomb-pulse" style={{animationDelay: '4.2s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[65%] left-[40%] honeycomb-pulse" style={{animationDelay: '4.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[65%] left-[60%] honeycomb-pulse" style={{animationDelay: '4.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[65%] left-[80%] honeycomb-pulse" style={{animationDelay: '5.1s'}}></div>
         
-        {/* Bottom Rows */}
-        <div className="hexagon honeycomb-float absolute bottom-32 left-4 honeycomb-pulse" style={{animationDelay: '9.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 left-1/3 honeycomb-pulse" style={{animationDelay: '10.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 left-2/3 honeycomb-pulse" style={{animationDelay: '10.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-32 right-4 honeycomb-pulse" style={{animationDelay: '10.8s'}}></div>
-        
-        <div className="hexagon honeycomb-float absolute bottom-16 left-8 honeycomb-pulse" style={{animationDelay: '11.1s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-1/5 honeycomb-pulse" style={{animationDelay: '11.4s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-2/5 honeycomb-pulse" style={{animationDelay: '11.7s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-3/5 honeycomb-pulse" style={{animationDelay: '12s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 left-4/5 honeycomb-pulse" style={{animationDelay: '12.3s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-16 right-8 honeycomb-pulse" style={{animationDelay: '12.6s'}}></div>
-        
-        <div className="hexagon honeycomb-float absolute bottom-4 left-12 honeycomb-pulse" style={{animationDelay: '12.9s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-1/4 honeycomb-pulse" style={{animationDelay: '13.2s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-1/2 honeycomb-pulse" style={{animationDelay: '13.5s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 left-3/4 honeycomb-pulse" style={{animationDelay: '13.8s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-4 right-12 honeycomb-pulse" style={{animationDelay: '14.1s'}}></div>
+        {/* Bottom Row */}
+        <div className="hexagon honeycomb-float absolute top-[85%] left-[15%] honeycomb-pulse" style={{animationDelay: '5.4s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[85%] left-[35%] honeycomb-pulse" style={{animationDelay: '5.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[85%] left-[55%] honeycomb-pulse" style={{animationDelay: '6.0s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-[85%] left-[75%] honeycomb-pulse" style={{animationDelay: '6.3s'}}></div>
       </div>
 
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-hidden relative">
         {/* Gray Sidebar - Full Height */}
-        <div 
+        <aside 
           className="w-80 min-w-80 max-w-80 border-r border-gray-700 flex flex-col relative z-10"
           style={{ backgroundColor: '#374151' }}
         >
@@ -329,18 +341,55 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
               <i className="fas fa-project-diagram mr-2"></i>Projects
             </h2>
             
-            <div className="space-y-2 mb-6">
+            <div className="space-y-3 mb-6">
               {userProjects.map(project => (
-                <button
-                  key={project.id}
-                  onClick={() => toggleProjectSelection(project.id)}
-                  className={`w-full p-3 text-left rounded-full transition-all duration-300 project-button ${
-                    selectedProjects.has(project.id) ? 'selected' : ''
-                  }`}
-                >
-                  <div className="font-semibold">{project.name}</div>
-                  <div className="text-sm opacity-75">{project.description}</div>
-                </button>
+                <div key={project.id} className="w-full">
+                  <button
+                    onClick={() => handleProjectClick(project.id)}
+                    className={`w-full p-4 text-left rounded-lg transition-all duration-300 hover:bg-gray-600 ${
+                      selectedProjects.has(project.id) 
+                        ? 'bg-yellow-400/10 border border-yellow-400/30' 
+                        : 'bg-gray-700/50'
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-white mb-1 truncate">{project.name}</div>
+                        <div className="text-sm text-gray-300 line-clamp-2 h-10 overflow-hidden">
+                          {project.description}
+                        </div>
+                      </div>
+                      <div className={`mt-1 transform transition-transform ${
+                        expandedProjects.has(project.id) ? 'rotate-45' : ''
+                      }`}>
+                        <i className="fas fa-chevron-down text-yellow-400"></i>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Expanded members dropdown */}
+                  {expandedProjects.has(project.id) && (
+                    <div className="mt-2 ml-2 mr-2 p-2 bg-gray-800/60 rounded-md text-sm text-gray-200">
+                      {projectMembersMap[project.id] === undefined && !project.members && (
+                        <div className="py-2">Loading members...</div>
+                      )}
+
+                      {(projectMembersMap[project.id] || project.members) && (
+                        <ul className="space-y-2 max-h-32 overflow-y-auto">
+                          {(projectMembersMap[project.id] || project.members).map((m: any) => (
+                            <li key={m.id} className="flex items-center justify-between">
+                              <div className="min-w-0">
+                                <div className="font-medium truncate">{m.name}</div>
+                                <div className="text-xs text-gray-400 truncate">{m.email}</div>
+                              </div>
+                              <div className="ml-3 text-xs text-gray-300">{m.role ? m.role : ''}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -364,21 +413,24 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
               <i className="fas fa-sign-out-alt mr-2"></i>Logout
             </button>
           </div>
-        </div>
+        </aside>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 relative">
           {/* Chat Messages */}
           <div 
             id="chat-messages" 
-            className="flex-1 overflow-y-auto px-8 py-6 space-y-4"
+            className="flex-1 overflow-y-auto px-8 py-6 space-y-4 max-h-[calc(100vh-120px)]" // 120px for input and padding
+            ref={chatContainerRef}
           >
             {messages.length === 0 && (
-              <div className="text-center text-white/70 mt-20">
-                <div className="hexagon mx-auto mb-4">
-                  <i className="fas fa-comments absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-white/70">
+                  <div className="hexagon mx-auto mb-4">
+                    <i className="fas fa-comments absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
+                  </div>
+                  <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">Talk to the Hive</p>
                 </div>
-                <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">Talk to the Hive</p>
               </div>
             )}
             
@@ -446,7 +498,7 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
               </button>
             </form>
           </div>
-        </div>
+        </main>
       </div>
 
       <NotificationContainer />

@@ -1,28 +1,17 @@
-@keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(5deg); }
+/* Ensure full height of the page */
+html, body {
+    height: 100%;
+    margin: 0; /* Remove any default margins */
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.7; }
+/* Ensure content is scrollable */
+body {
+    overflow-y: auto;
 }
 
-@keyframes slide-in {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
-
+/* Background pattern styles */
 .honeycomb-bg {
     background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 25%, #d97706 50%, #b45309 75%, #92400e 100%);
-}
-
-.honeycomb-float {
-    animation: float 6s ease-in-out infinite;
-}
-
-.honeycomb-pulse {
-    animation: pulse 3s ease-in-out infinite;
 }
 
 .honeycomb-pattern {
@@ -30,18 +19,19 @@
         radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.1) 0%, transparent 50%),
-        /* Honeycomb pattern */
         repeating-linear-gradient(30deg, transparent, transparent 20px, rgba(251, 191, 36, 0.05) 20px, rgba(251, 191, 36, 0.05) 22px),
         repeating-linear-gradient(-30deg, transparent, transparent 20px, rgba(245, 158, 11, 0.05) 20px, rgba(245, 158, 11, 0.05) 22px),
         repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(217, 119, 6, 0.05) 20px, rgba(217, 119, 6, 0.05) 22px);
 }
 
+/* Glass effect */
 .glass-effect {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Hexagon styles */
 .hexagon-small {
     width: 24px;
     height: 13.86px;
@@ -96,6 +86,7 @@
     border-top: 17.32px solid #fbbf24;
 }
 
+/* Chat message bubble styles */
 .chat-bubble {
     background: linear-gradient(135deg, rgba(254, 243, 199, 0.95) 0%, rgba(253, 230, 138, 0.95) 100%);
     border: 2px solid #f59e0b;
@@ -103,6 +94,7 @@
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
+/* Project button styles */
 .project-button {
     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     border: 2px solid #f59e0b;
@@ -116,68 +108,58 @@
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
-/* Ensure selected agents stay dark yellow even on hover */
-.project-button.bg-yellow-500:hover {
-    background: #eab308 !important; /* Slightly darker yellow on hover */
-    transform: scale(1.05) translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(234, 179, 8, 0.4) !important;
-}
-
-/* Project selection styles */
+/* Button active state */
 .project-button.selected {
-    background: #eab308 !important; /* Dark yellow */
+    background: #eab308 !important;
     color: white !important;
     transform: scale(1.05) translateY(-2px) !important;
     box-shadow: 0 6px 16px rgba(234, 179, 8, 0.4) !important;
 }
 
 .project-button.selected:hover {
-    background: #ca8a04 !important; /* Even darker yellow on hover */
+    background: #ca8a04 !important;
     transform: scale(1.08) translateY(-3px) !important;
     box-shadow: 0 8px 20px rgba(234, 179, 8, 0.6) !important;
 }
 
+/* Chat input styling */
 .chat-input-centered {
-    position: absolute;
-    left: 22rem; /* Start after the sidebar with extra offset */
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: calc(100vw - 22rem - 12rem); /* Full width minus sidebar minus offset minus extra padding */
-    padding: 0 6rem;
-    transition: all 1s ease-out;
+    position: relative;
+    width: 100%;
+    padding: 1.5rem 6rem;
+    margin-top: auto;
+    transition: all 0.3s ease-out;
 }
 
 .chat-input-bottom {
-    position: absolute;
-    left: 22rem; /* Start after the sidebar with extra offset */
-    right: 0;
+    position: sticky;
     bottom: 0;
-    transform: none;
-    width: calc(100vw - 22rem - 12rem); /* Full width minus sidebar minus offset minus extra padding */
+    width: 100%;
     padding: 1.5rem 6rem;
-    transition: all 1s ease-out;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease-out;
 }
 
 .chat-input-focused {
     text-align: left !important;
 }
 
-/* Chat messages container with fixed height for scrolling */
+/* Chat messages container */
 #chat-messages {
-    height: calc(100vh - 200px);
-    max-height: calc(100vh - 200px);
-}
-
-/* Ensure chat input stays at bottom after first message */
-.chat-input-bottom {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 20rem !important; /* 320px = w-80 sidebar width */
-    right: 0 !important;
-    z-index: 10;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 100px; /* Space for input */
 }
 
 .animate-slide-in {
     animation: slide-in 0.3s ease-out;
+}
+
+/* Added this to ensure the root container takes up the full screen */
+#root {
+    min-height: 100vh; /* Full height of the viewport */
 }
