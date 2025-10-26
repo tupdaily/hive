@@ -59,6 +59,29 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
     }
   });
 
+  // Get user's single agent (first one found)
+  router.get('/my-agent', async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const agents = await agentManager.getAgentsByUser(req.user.userId);
+      
+      if (agents.length === 0) {
+        return res.status(404).json({ error: 'No agent found for user' });
+      }
+
+      // Return the first agent (since each user should have exactly one)
+      res.json({
+        agent: agents[0].getAgent()
+      });
+    } catch (error) {
+      console.error('Error fetching user agent:', error);
+      res.status(500).json({ error: 'Failed to fetch agent' });
+    }
+  });
+
   // Get user's agents
   router.get('/my-agents', async (req: AuthenticatedRequest, res: Response) => {
     try {

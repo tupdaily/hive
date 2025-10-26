@@ -65,19 +65,19 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
         {/* Bee Logo */}
         <div className="text-center mb-8">
           <div className="hexagon mx-auto mb-4 relative">
-            <i className="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-4xl"></i>
+            <i className="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-4xl drop-shadow-lg"></i>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Welcome to Hive</h1>
-          <p className="text-yellow-100">Your AI-powered workspace</p>
+          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Welcome to Hive</h1>
+          <p className="text-yellow-100 drop-shadow-md">Your AI-powered workspace</p>
         </div>
 
         {/* Login Form */}
         {isLogin ? (
           <form onSubmit={handleLogin} className="space-y-4">
-            <h2 className="text-2xl font-bold text-center text-white mb-6">Welcome Back</h2>
+            <h2 className="text-2xl font-bold text-center text-white mb-6 drop-shadow-lg">Welcome Back</h2>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="login-email">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="login-email">
                 <i className="fas fa-envelope mr-2"></i>Email
               </label>
               <input 
@@ -91,7 +91,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
             </div>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="login-password">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="login-password">
                 <i className="fas fa-lock mr-2"></i>Password
               </label>
               <input 
@@ -116,7 +116,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
               
               <button 
                 type="button"
-                className="text-yellow-200 hover:text-white font-semibold transition-colors duration-300" 
+                className="text-yellow-200 hover:text-white font-semibold transition-colors duration-300 drop-shadow-md" 
                 onClick={() => setIsLogin(false)}
               >
                 Create Account
@@ -125,10 +125,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
-            <h2 className="text-2xl font-bold text-center text-white mb-6">Join the Hive</h2>
+            <h2 className="text-2xl font-bold text-center text-white mb-6 drop-shadow-lg">Join the Hive</h2>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="reg-name">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="reg-name">
                 <i className="fas fa-user mr-2"></i>Name
               </label>
               <input 
@@ -142,7 +142,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
             </div>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="reg-email">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="reg-email">
                 <i className="fas fa-envelope mr-2"></i>Email
               </label>
               <input 
@@ -156,7 +156,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
             </div>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="reg-password">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="reg-password">
                 <i className="fas fa-lock mr-2"></i>Password
               </label>
               <input 
@@ -170,7 +170,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
             </div>
             
             <div>
-              <label className="block text-yellow-100 text-sm font-semibold mb-2" htmlFor="reg-role">
+              <label className="block text-yellow-100 text-sm font-semibold mb-2 drop-shadow-md" htmlFor="reg-role">
                 <i className="fas fa-briefcase mr-2"></i>Role
               </label>
               <select 
@@ -197,7 +197,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onRegister, showError 
               
               <button 
                 type="button"
-                className="text-yellow-200 hover:text-white font-semibold transition-colors duration-300" 
+                className="text-yellow-200 hover:text-white font-semibold transition-colors duration-300 drop-shadow-md" 
                 onClick={() => setIsLogin(true)}
               >
                 Sign In

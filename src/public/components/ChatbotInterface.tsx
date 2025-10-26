@@ -47,6 +47,13 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
     loadUserProjects()
   }, [])
 
+  // Reload agent when user description changes (after questionnaire submission)
+  useEffect(() => {
+    if (user?.description) {
+      loadUserAgent()
+    }
+  }, [user?.description])
+
   useEffect(() => {
     if (userAgent && userProjects.length > 0) {
       loadAgentMemoryBlocks()
@@ -240,67 +247,67 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
         <div className="hexagon honeycomb-float absolute bottom-60 right-1/3 honeycomb-pulse" style={{animationDelay: '5s'}}></div>
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 bg-black/20 backdrop-blur-sm border-b border-yellow-400/30">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-4">
-            <div className="hexagon">
-              <i className="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-xl"></i>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Hive AI</h1>
-              <p className="text-yellow-100">Welcome back, {user.name}</p>
-            </div>
-          </div>
-          <button 
-            onClick={onLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full transition-all duration-300"
-          >
-            <i className="fas fa-sign-out-alt mr-2"></i>Logout
-          </button>
-        </div>
-      </div>
-
       <div className="flex h-screen">
-        {/* Sidebar */}
-        <div className="w-80 bg-amber-900/80 backdrop-blur-sm border-r border-amber-600/50 p-4 shadow-lg">
-          <div className="flex items-center mb-6">
-            <div className="hexagon-small mr-3">
-              <i className="fas fa-project-diagram text-amber-200"></i>
+        {/* Black Sidebar - Full Height */}
+        <div className="w-80 min-w-80 max-w-80 bg-amber-900 border-r border-amber-600 flex flex-col relative z-10">
+          {/* Logo Section - Top */}
+          <div className="p-4 border-b border-amber-600">
+            <div className="flex items-center space-x-3">
+              <div className="hexagon">
+                <i className="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-xl"></i>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Hive AI</h1>
+                <p className="text-amber-100 text-sm">Welcome, {user.name}</p>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold text-white">Projects</h2>
-          </div>
-          
-          <div className="space-y-3 mb-6">
-            {userProjects.map(project => (
-              <button
-                key={project.id}
-                onClick={() => toggleProjectSelection(project.id)}
-                className={`w-full p-4 text-left rounded-xl transition-all duration-300 border-2 ${
-                  selectedProjects.has(project.id) 
-                    ? 'bg-amber-600 border-amber-400 text-white shadow-lg transform scale-105' 
-                    : 'bg-amber-800/50 border-amber-700/50 text-amber-100 hover:bg-amber-800/70 hover:border-amber-600/70'
-                }`}
-              >
-                <div className="font-semibold text-sm mb-1">{project.name}</div>
-                <div className="text-xs opacity-80 leading-relaxed">{project.description}</div>
-              </button>
-            ))}
           </div>
 
-          {/* Admin Console Button */}
-          {user.role === 'admin' && (
-            <button
-              onClick={onShowAdminConsole}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg border-2 border-purple-500/50"
+          {/* Projects Section - Middle */}
+          <div className="flex-1 p-4 overflow-y-auto">
+            <h2 className="text-lg font-semibold text-white mb-4">
+              <i className="fas fa-project-diagram mr-2"></i>Projects
+            </h2>
+            
+            <div className="space-y-2 mb-6">
+              {userProjects.map(project => (
+                <button
+                  key={project.id}
+                  onClick={() => toggleProjectSelection(project.id)}
+                  className={`w-full p-3 text-left rounded-full transition-all duration-300 project-button ${
+                    selectedProjects.has(project.id) ? 'selected' : ''
+                  }`}
+                >
+                  <div className="font-semibold">{project.name}</div>
+                  <div className="text-sm opacity-75">{project.description}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Admin Console Button */}
+            {user.role === 'admin' && (
+              <button
+                onClick={onShowAdminConsole}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105 mb-4"
+              >
+                <i className="fas fa-cog mr-2"></i>Admin Console
+              </button>
+            )}
+          </div>
+
+          {/* Logout Button - Bottom */}
+          <div className="p-4 border-t border-amber-600">
+            <button 
+              onClick={onLogout}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-full transition-all duration-300"
             >
-              <i className="fas fa-cog mr-2"></i>Admin Console
+              <i className="fas fa-sign-out-alt mr-2"></i>Logout
             </button>
-          )}
+          </div>
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Chat Messages */}
           <div 
             id="chat-messages" 
@@ -321,14 +328,14 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl chat-bubble ${
+                  className={`max-w-2xl lg:max-w-4xl px-6 py-4 rounded-2xl chat-bubble ${
                     message.isUser 
                       ? 'bg-yellow-400 text-gray-800' 
                       : 'bg-white/90 text-gray-800'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
-                  <p className="text-xs opacity-60 mt-1">
+                  <p className="text-lg leading-relaxed">{message.content}</p>
+                  <p className="text-sm opacity-60 mt-3">
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
@@ -337,11 +344,14 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
             
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white/90 text-gray-800 px-4 py-3 rounded-2xl">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <div className="bg-white/90 text-gray-800 px-6 py-4 rounded-2xl max-w-2xl lg:max-w-4xl">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex space-x-1">
+                      <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                    <span className="text-lg">Thinking...</span>
                   </div>
                 </div>
               </div>

@@ -62,6 +62,8 @@ function App() {
         <AdminConsole 
           onClose={() => setShowAdminConsole(false)}
           token={token}
+          showSuccess={showSuccess}
+          showError={showError}
         />
       )}
       
