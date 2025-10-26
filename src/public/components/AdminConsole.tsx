@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react'
 interface AdminConsoleProps {
   onClose: () => void
   token: string
+  showSuccess: (message: string) => void
+  showError: (message: string) => void
 }
 
 interface Project {
@@ -20,7 +22,7 @@ interface User {
   role: string
 }
 
-const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
+const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token, showSuccess, showError }) => {
   const [projects, setProjects] = useState<Project[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
@@ -92,13 +94,14 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
         setNewProjectStatus('')
         setNewProjectTasks('')
         loadProjects()
+        showSuccess('Project created successfully!')
       } else {
         const errorData = await response.json()
-        alert(`Failed to create project: ${errorData.error}`)
+        showError(`Failed to create project: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error creating project:', error)
-      alert('Failed to create project')
+      showError('Failed to create project')
     } finally {
       setLoading(false)
     }
@@ -121,16 +124,16 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
       })
 
       if (response.ok) {
-        alert('User assigned to project successfully!')
+        showSuccess('User assigned to project successfully!')
         setSelectedUser('')
         setSelectedProject('')
       } else {
         const errorData = await response.json()
-        alert(`Failed to assign user: ${errorData.error}`)
+        showError(`Failed to assign user: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error assigning user:', error)
-      alert('Failed to assign user to project')
+      showError('Failed to assign user to project')
     }
   }
 
@@ -151,40 +154,40 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
       })
 
       if (response.ok) {
-        alert('User removed from project successfully!')
+        showSuccess('User removed from project successfully!')
         setSelectedUser('')
         setSelectedProject('')
       } else {
         const errorData = await response.json()
-        alert(`Failed to remove user: ${errorData.error}`)
+        showError(`Failed to remove user: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error removing user:', error)
-      alert('Failed to remove user from project')
+      showError('Failed to remove user from project')
     }
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-2xl p-8 max-w-7xl w-full shadow-2xl border-2 border-purple-400">
+      <div className="bg-amber-800 rounded-2xl p-8 max-w-7xl w-full shadow-2xl border-2 border-amber-400">
         <div className="text-center mb-6">
           <div className="hexagon mx-auto mb-4 relative">
             <i className="fas fa-cog absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
           </div>
           <h3 className="text-2xl font-bold text-white mb-2">Admin Console</h3>
-          <p className="text-purple-100">Manage projects and user assignments</p>
+          <p className="text-amber-100">Manage projects and user assignments</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Existing Projects */}
-          <div className="bg-gray-700 rounded-xl p-6">
+          <div className="bg-amber-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-white mb-4">
               <i className="fas fa-list mr-2"></i>Existing Projects
             </h4>
             
             <div className="space-y-2 max-h-80 overflow-y-auto">
               {projects.map(project => (
-                <div key={project.id} className="bg-gray-600 p-3 rounded-lg">
+                <div key={project.id} className="bg-amber-600 p-3 rounded-lg">
                   <div className="font-semibold text-white">{project.name}</div>
                   <div className="text-sm text-gray-300">{project.description}</div>
                   <div className="text-xs text-gray-400">Status: {project.status}</div>
@@ -194,7 +197,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
           </div>
           
           {/* Create New Project */}
-          <div className="bg-gray-700 rounded-xl p-6">
+          <div className="bg-amber-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-white mb-4">
               <i className="fas fa-plus-circle mr-2"></i>Create Project
             </h4>
@@ -214,14 +217,14 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 placeholder="Project name"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400"
+                className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400"
                 required
               />
               <textarea
                 placeholder="Project description/goals"
                 value={newProjectDescription}
                 onChange={(e) => setNewProjectDescription(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
+                className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400 resize-none"
                 rows={2}
                 required
               />
@@ -229,7 +232,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 placeholder="Current progress and timeline (updated daily)"
                 value={newProjectStatus}
                 onChange={(e) => setNewProjectStatus(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
+                className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400 resize-none"
                 rows={2}
                 required
               />
@@ -237,7 +240,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 placeholder="Tasks that are ongoing or upcoming"
                 value={newProjectTasks}
                 onChange={(e) => setNewProjectTasks(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
+                className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400 resize-none"
                 rows={2}
                 required
               />
@@ -253,7 +256,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
           </div>
           
           {/* User Assignments */}
-          <div className="bg-gray-700 rounded-xl p-6">
+          <div className="bg-amber-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-white mb-4">
               <i className="fas fa-users mr-2"></i>User Assignments
             </h4>
@@ -264,7 +267,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 <select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400"
+                  className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400"
                 >
                   <option value="">Choose a user</option>
                   {users.map(user => (
@@ -280,7 +283,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 <select
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400"
+                  className="w-full px-3 py-2 rounded-lg bg-amber-600 text-white border border-amber-500 focus:outline-none focus:border-amber-400"
                 >
                   <option value="">Choose a project</option>
                   {projects.map(project => (
@@ -312,7 +315,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
         <div className="flex justify-end mt-6">
           <button 
             onClick={onClose}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-6 rounded-full transition-all duration-300"
           >
             <i className="fas fa-times mr-2"></i>Close
           </button>
