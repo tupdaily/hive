@@ -57,7 +57,7 @@ class HiveApp {
                     const data = await response.json();
                     this.user = data.user;
                     
-                    if (!data.user.hasDescription) {
+                    if (!data.user.description) {
                         this.showQuestionnaire();
                     } else {
                         await this.showDashboard();
@@ -78,8 +78,11 @@ class HiveApp {
     async handleLogin(e) {
         e.preventDefault();
         
+        console.log('Login form submitted');
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+        
+        console.log('Login attempt for email:', email);
         
         try {
             const response = await fetch(`${this.apiBase}/auth/login`, {
@@ -97,9 +100,14 @@ class HiveApp {
                 localStorage.setItem('user', JSON.stringify(this.user));
                 
                 // Check if user has description
-                if (!data.user.hasDescription) {
+                console.log('User data from login:', data.user);
+                console.log('Description:', data.user.description);
+                
+                if (!data.user.description) {
+                    console.log('Showing questionnaire - user has no description');
                     this.showQuestionnaire();
                 } else {
+                    console.log('Showing dashboard - user has description');
                     await this.showDashboard();
                     await this.loadUserData();
                 }

@@ -107,8 +107,7 @@ export const createAuthRoutes = (authService: AuthService, db: any) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          description: user.description,
-          hasDescription: !!user.description
+          description: user.description
         }
       });
     } catch (error) {
