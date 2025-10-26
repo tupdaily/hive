@@ -94,13 +94,20 @@
             box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         }
         
+        /* Ensure selected agents stay dark yellow even on hover */
+        .project-button.bg-yellow-500:hover {
+            background: #eab308 !important; /* Slightly darker yellow on hover */
+            transform: scale(1.05) translateY(-2px) !important;
+            box-shadow: 0 6px 16px rgba(234, 179, 8, 0.4) !important;
+        }
+        
         .chat-input-centered {
             position: absolute;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
-            max-width: 56rem;
+            max-width: 68rem;
             padding: 0 2rem;
             transition: all 1s ease-out;
         }
@@ -112,13 +119,28 @@
             bottom: 0;
             transform: none;
             width: 100%;
-            max-width: none;
+            max-width: 68rem;
             padding: 1.5rem;
             transition: all 1s ease-out;
         }
         
         .chat-input-focused {
             text-align: left !important;
+        }
+        
+        /* Chat messages container with fixed height for scrolling */
+        #chat-messages {
+            height: calc(100vh - 200px);
+            max-height: calc(100vh - 200px);
+        }
+        
+        /* Ensure chat input stays at bottom after first message */
+        .chat-input-bottom {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 20rem !important; /* 320px = w-80 sidebar width */
+            right: 0 !important;
+            z-index: 10;
         }
     </style>
 </head>

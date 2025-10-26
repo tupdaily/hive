@@ -186,19 +186,38 @@ class HiveApp {
         // For now, show placeholder projects
         const projectsList = document.getElementById('projects-list');
         projectsList.innerHTML = `
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="ecommerce">
                 <i class="fas fa-project-diagram mr-2"></i>E-commerce Platform
             </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="mobile">
                 <i class="fas fa-mobile-alt mr-2"></i>Mobile App
             </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2">
+            <div class="project-button p-3 text-center text-gray-800 font-medium mb-2" data-project="analytics">
                 <i class="fas fa-database mr-2"></i>Data Analytics
             </div>
-            <div class="project-button p-3 text-center text-gray-800 font-medium">
+            <div class="project-button p-3 text-center text-gray-800 font-medium" data-project="create">
                 <i class="fas fa-plus mr-2"></i>Create New Project
             </div>
         `;
+
+        // Add event listeners to project buttons
+        projectsList.querySelectorAll('[data-project]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const projectId = e.currentTarget.getAttribute('data-project');
+                this.selectProject(projectId);
+            });
+        });
+    }
+
+    selectProject(projectId) {
+        console.log('Selected project:', projectId);
+        if (projectId === 'create') {
+            // Handle create new project
+            this.addMessageToChat('Create New Project clicked! This feature will be implemented soon.', 'assistant');
+        } else {
+            // Handle project selection
+            this.addMessageToChat(`Selected project: ${projectId}. This feature will be implemented soon.`, 'assistant');
+        }
     }
 
     async loadAgents() {
@@ -227,27 +246,43 @@ class HiveApp {
 
         agentsSidebar.innerHTML = this.agents.map(agent => {
             const isSelected = agent.id === this.selectedAgentId;
-            const selectedClass = isSelected ? 'ring-2 ring-yellow-400 bg-yellow-200' : '';
+            const selectedClass = isSelected ? 'bg-yellow-500 text-white shadow-lg transform scale-105' : 'bg-yellow-200 text-gray-800';
             
             return `
-                <div class="project-button p-3 text-center text-gray-800 font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedClass}" 
-                     onclick="app.selectAgent('${agent.id}')">
+                <div class="project-button p-3 text-center font-medium mb-2 cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedClass}" 
+                     data-agent-id="${agent.id}">
                     <i class="fas fa-bee mr-2"></i>${agent.name}
                 </div>
             `;
         }).join('');
+
+        // Add event listeners to agent buttons
+        agentsSidebar.querySelectorAll('[data-agent-id]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const agentId = e.currentTarget.getAttribute('data-agent-id');
+                this.selectAgent(agentId);
+            });
+        });
     }
 
     selectAgent(agentId) {
+        console.log('selectAgent called with:', agentId);
+        console.log('Available agents:', this.agents);
+        
         // Set the selected agent as active
         this.selectedAgentId = agentId;
         const agent = this.agents.find(a => a.id === agentId);
         
+        console.log('Found agent:', agent);
+        console.log('Selected agent ID:', this.selectedAgentId);
+        
         if (agent) {
             this.addMessageToChat(`Switched to ${agent.name}. How can I help you?`, 'assistant');
             
-            // Update visual indication of selected agent
-            this.updateAgentSelection();
+            // Re-render the sidebar to show the new selection
+            this.renderAgentsSidebar();
+        } else {
+            console.error('Agent not found:', agentId);
         }
     }
 
@@ -619,13 +654,9 @@ class HiveApp {
     handleChatInputBlur(e) {
         const textarea = e.target;
         
-        // If textarea is empty, move back to center
-        if (textarea.value.trim().length === 0) {
-            const container = document.getElementById('chat-input-container');
-            container.classList.remove('chat-input-bottom');
-            container.classList.add('chat-input-centered');
-            textarea.classList.remove('chat-input-focused');
-        }
+        // Don't move back to center once chat has started - keep it at bottom
+        // Only remove the focused styling
+        textarea.classList.remove('chat-input-focused');
     }
 
     toggleAuthForms() {

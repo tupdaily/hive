@@ -26,7 +26,7 @@ export class AIAgent {
           ]
         }
       );
-
+      console.log('hi');
       const message = response.messages?.[0];
       if (message && 'content' in message) {
         const content = message.content;

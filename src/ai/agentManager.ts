@@ -85,7 +85,7 @@ export class AgentManager {
     try {
       const lettaAgent = await this.client.agents.create({
         name: agentData.name,
-        model: "anthropic/claude-3-5-sonnet-20241022",
+        model: "openai/gpt-4.1",
         embedding: "openai/text-embedding-3-small",
         memoryBlocks: memoryBlocks,
         blockIds: blockIds // Attach human and optionally project's memory block
