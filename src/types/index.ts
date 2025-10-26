@@ -15,6 +15,7 @@ export interface Agent {
   name: string;
   personality: string;
   workPreferences: string[];
+  lettaAgentId?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

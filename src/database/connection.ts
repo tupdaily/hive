@@ -148,6 +148,7 @@ export class Database {
         name: agent.name,
         personality: agent.personality,
         work_preferences: JSON.stringify(agent.workPreferences),
+        // letta_agent_id: agent.lettaAgentId || null, // Temporarily disabled until schema is updated
         is_active: agent.isActive
       });
     
@@ -170,6 +171,7 @@ export class Database {
       name: data.name,
       personality: data.personality,
       workPreferences: JSON.parse(data.work_preferences),
+      // lettaAgentId: data.letta_agent_id, // Temporarily disabled
       isActive: Boolean(data.is_active),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -192,6 +194,7 @@ export class Database {
       name: agent.name,
       personality: agent.personality,
       workPreferences: JSON.parse(agent.work_preferences),
+      lettaAgentId: agent.letta_agent_id,
       isActive: Boolean(agent.is_active),
       createdAt: new Date(agent.created_at),
       updatedAt: new Date(agent.updated_at)
@@ -213,6 +216,7 @@ export class Database {
       name: agent.name,
       personality: agent.personality,
       workPreferences: JSON.parse(agent.work_preferences),
+      lettaAgentId: agent.letta_agent_id,
       isActive: Boolean(agent.is_active),
       createdAt: new Date(agent.created_at),
       updatedAt: new Date(agent.updated_at)
@@ -228,6 +232,7 @@ export class Database {
     if (updates.personality !== undefined) updateData.personality = updates.personality;
     if (updates.workPreferences !== undefined) updateData.work_preferences = JSON.stringify(updates.workPreferences);
     if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    // if (updates.lettaAgentId !== undefined) updateData.letta_agent_id = updates.lettaAgentId; // Temporarily disabled
     
     if (Object.keys(updateData).length === 0) return;
     

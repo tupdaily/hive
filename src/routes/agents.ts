@@ -30,23 +30,27 @@ export const createAgentRoutes = (agentManager: AgentManager, authService: any) 
   // Create a new agent
   router.post('/', async (req: AuthenticatedRequest, res: Response) => {
     try {
+      console.log('Creating agent with data:', req.body);
       const { name, personality, description } = createAgentSchema.parse(req.body);
       
       if (!req.user) {
         return res.status(401).json({ error: 'User not authenticated' });
       }
 
+      console.log('Creating agent for user:', req.user.userId);
       const agent = await agentManager.createAgent(req.user.userId, {
         name,
         personality,
         description
       });
 
+      console.log('Agent created successfully:', agent);
       res.status(201).json({
         message: 'Agent created successfully',
         agent: agent
       });
     } catch (error) {
+      console.error('Error creating agent:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid input', details: error.errors });
       }

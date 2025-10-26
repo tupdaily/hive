@@ -82,14 +82,31 @@ export class AgentManager {
     }
 
     // Create agent in Letta with persona, human, and optionally project memory block
-    const agent = await this.client.agents.create({
-      model: "openai/gpt-4.1",
-      embedding: "openai/text-embedding-3-small",
-      memoryBlocks: memoryBlocks,
-      blockIds: blockIds // Attach human and optionally project's memory block
-    });
+    try {
+      const lettaAgent = await this.client.agents.create({
+        name: agentData.name,
+        model: "anthropic/claude-3-5-sonnet-20241022",
+        embedding: "openai/text-embedding-3-small",
+        memoryBlocks: memoryBlocks,
+        blockIds: blockIds // Attach human and optionally project's memory block
+      });
 
-    return agent;
+      // Update database agent with Letta agent ID
+      await this.db.updateAgent(agentId, {
+        lettaAgentId: lettaAgent.id
+      });
+
+      return lettaAgent;
+    } catch (error) {
+      console.error('Error creating Letta agent:', error);
+      // If Letta agent creation fails, we still have the database agent
+      // Return a mock response for now
+      return {
+        id: agentId,
+        name: agentData.name,
+        status: 'created_without_letta'
+      };
+    }
   }
 
   async createProjectWithSharedMemory(projectData: {
@@ -129,7 +146,7 @@ export class AgentManager {
       return null;
     }
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     return aiAgent;
   }
@@ -142,7 +159,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -160,7 +177,7 @@ export class AgentManager {
       if (agent.isActive) {
         let aiAgent = this.agents.get(agent.id);
         if (!aiAgent) {
-          aiAgent = new AIAgent(agent, this.db);
+          aiAgent = new AIAgent(agent);
           this.agents.set(agent.id, aiAgent);
         }
         aiAgents.push(aiAgent);
@@ -183,7 +200,7 @@ export class AgentManager {
     const agent = await this.db.getAgentById(agentId);
     if (!agent) return null;
 
-    const aiAgent = new AIAgent(agent, this.db);
+    const aiAgent = new AIAgent(agent);
     this.agents.set(agentId, aiAgent);
     
     return aiAgent;

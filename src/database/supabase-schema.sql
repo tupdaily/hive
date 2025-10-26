@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS agents (
   name TEXT NOT NULL,
   personality TEXT NOT NULL,
   work_preferences TEXT NOT NULL, -- JSON array
+  letta_agent_id TEXT, -- Letta AI agent ID
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
