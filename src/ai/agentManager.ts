@@ -7,7 +7,7 @@ import { Project } from '../types';
 
 export class AgentManager {
   private db: Database;
-  private agents: Map<string, AIAgent> = new Map();0
+  private agents: Map<string, AIAgent> = new Map();
   private client: LettaClient;
 
   constructor(db: Database) {
@@ -38,15 +38,34 @@ export class AgentManager {
 
     let userMemoryBlockId = user.memoryBlockId;
 
-    // Try to list MCP tools from a configured server (optional).
-    // Replace "Composio" with your MCP server name configured in ADE if different.
+    // Discover MCP tools from the configured server and ensure they are added to Letta.
+    // The ADE server name can be configured via LETTA_MCP_SERVER_NAME. Default: 'Composio'
+    const mcpServerName = process.env.LETTA_MCP_SERVER_NAME || 'Composio';
     let mcpTools: any[] = [];
     try {
-      mcpTools = await this.client.tools.listMcpToolsByServer("Composio");
-      console.log('Found MCP tools for server Composio:', mcpTools.map(t => t.id || t.name));
+      mcpTools = await this.client.tools.listMcpToolsByServer(mcpServerName);
+      console.log(`Discovered ${mcpTools.length} MCP tools on server ${mcpServerName}`);
     } catch (err) {
-      console.warn('Unable to list MCP tools for server Composio (continuing without tools):', err instanceof Error ? err.message : String(err));
+      console.warn(`Unable to list MCP tools for server ${mcpServerName} (continuing without tools):`, err instanceof Error ? err.message : String(err));
       mcpTools = [];
+    }
+
+    // Ensure each discovered tool is registered in Letta (add via addMcpTool). Collect their Letta tool IDs.
+    const toolIds: string[] = [];
+    for (const toolInfo of mcpTools) {
+      const toolName = toolInfo.name || toolInfo.id || null;
+      if (!toolName) continue;
+      try {
+        // addMcpTool returns the Letta-side tool object (with id)
+        const added = await this.client.tools.addMcpTool(mcpServerName, toolName);
+        if (added && added.id) {
+          toolIds.push(added.id);
+          console.log(`Registered MCP tool in Letta: ${toolName} -> ${added.id}`);
+        }
+      } catch (err) {
+        // If adding fails, warn and continue. The tool may already be registered or there may be permission issues.
+        console.warn(`Failed to add MCP tool '${toolName}' to Letta (will skip):`, err instanceof Error ? err.message : String(err));
+      }
     }
 
     // Create user memory block if it doesn't exist
