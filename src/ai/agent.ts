@@ -15,8 +15,14 @@ export class AIAgent {
 
   async query(query: string): Promise<string> {
     try {
+      // Check if we have a Letta agent ID
+      if (!this.agent.lettaAgentId) {
+        console.log('No Letta agent ID found, returning mock response');
+        return `I'm ${this.agent.name}, a ${this.agent.personality} agent. You asked: "${query}". I'm currently in development mode and don't have full AI capabilities yet, but I'm here to help!`;
+      }
+
       const response = await this.client.agents.messages.create(
-        this.agent.id, 
+        this.agent.lettaAgentId, // Use lettaAgentId here
         {
           messages: [
             {
@@ -26,7 +32,7 @@ export class AIAgent {
           ]
         }
       );
-      console.log('hi');
+
       const message = response.messages?.[0];
       if (message && 'content' in message) {
         const content = message.content;
@@ -44,7 +50,7 @@ export class AIAgent {
       return 'I apologize, but I could not generate a response at this time.';
     } catch (error) {
       console.error('Letta API error:', error);
-      return 'I apologize, but I encountered an error while processing your request.';
+      return `I'm ${this.agent.name}, a ${this.agent.personality} agent. You asked: "${query}". I encountered an error, but I'm still here to help!`;
     }
   }
 

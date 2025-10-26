@@ -96,16 +96,15 @@ export class AgentManager {
         lettaAgentId: lettaAgent.id
       });
 
-      return lettaAgent;
+      // Return the database agent, not the Letta agent
+      const updatedAgent = await this.db.getAgentById(agentId);
+      return updatedAgent;
     } catch (error) {
       console.error('Error creating Letta agent:', error);
       // If Letta agent creation fails, we still have the database agent
-      // Return a mock response for now
-      return {
-        id: agentId,
-        name: agentData.name,
-        status: 'created_without_letta'
-      };
+      // Return the database agent
+      const databaseAgent = await this.db.getAgentById(agentId);
+      return databaseAgent;
     }
   }
 

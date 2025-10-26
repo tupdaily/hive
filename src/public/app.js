@@ -473,6 +473,7 @@ class HiveApp {
         }
 
         try {
+            console.log('Getting AI response for agent:', this.userAgent.id);
             const response = await fetch(`${this.apiBase}/agents/${this.userAgent.id}/query`, {
                 method: 'POST',
                 headers: {
@@ -483,7 +484,7 @@ class HiveApp {
             });
 
             const data = await response.json();
-
+            console.log('Ai response:', data);
             if (response.ok) {
                 return data.response || "I received your message but couldn't generate a response.";
             } else {
