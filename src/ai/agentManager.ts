@@ -127,9 +127,13 @@ export class AgentManager {
   }): Promise<Project> {
     // Create a Letta memory block for the project
     const projectMemoryBlock = await this.client.blocks.create({
-      label: projectData.name,
-      value: `Project Name: ${projectData.name}\nDescription: ${projectData.description}\nStatus: ${projectData.status}`,
-      description: "Stores project context and progress. This memory block is shared across all agents working on this project."
+      label: projectData.name + " Shared Overview",
+      value: `
+      Project Name: ${projectData.name}\n
+      Description: ${projectData.description}\n
+      Status: ${projectData.status}
+      `,
+      description: "High-level project state visible to all team agents. Tracks overall goals, key milestones, progress, insights, and dependencies."
     });
 
     // Create project in database with the new memory block ID

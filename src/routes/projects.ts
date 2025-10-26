@@ -4,7 +4,9 @@ import { z } from 'zod';
 
 const createProjectSchema = z.object({
   name: z.string().min(1),
-  description: z.string().min(1)
+  description: z.string().min(1),
+  status: z.string().min(1),
+  tasks: z.string().min(1)
 });
 
 const assignUserSchema = z.object({
@@ -47,7 +49,7 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
   // Create a new project (admin only)
   router.post('/', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { name, description } = createProjectSchema.parse(req.body);
+      const { name, description, status, tasks } = createProjectSchema.parse(req.body);
 
       // Create a shared memory block in Letta for this project
       let memoryBlockId = null;
@@ -56,7 +58,7 @@ export const createProjectRoutes = (db: any, authService: any, agentManager: any
         const lettaClient = agentManager.getClient();
         const memoryBlock = await lettaClient.blocks.create({
           label: name,
-          value: description || 'No description provided',
+          value: `Project Name: ${name}\nDescription/Goals: ${description}\nTimeline/Milestones (updated daily): ${status}\nRequired Subtasks: ${tasks}\nKey Insights: `,
           limit: 4000,
           description: "Stores key information about the project, current progress, overall goal, how it fits into the rest of the organization, what tasks remain, who's working on what, with a focus on information that changes dynamically (tasking, individuals working on the project)"
         });

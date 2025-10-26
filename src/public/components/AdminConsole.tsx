@@ -26,6 +26,8 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
   const [loading, setLoading] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDescription, setNewProjectDescription] = useState('')
+  const [newProjectStatus, setNewProjectStatus] = useState('')
+  const [newProjectTasks, setNewProjectTasks] = useState('')
   const [selectedUser, setSelectedUser] = useState('')
   const [selectedProject, setSelectedProject] = useState('')
 
@@ -78,13 +80,17 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
         },
         body: JSON.stringify({
           name: newProjectName,
-          description: newProjectDescription
+          description: newProjectDescription,
+          status: newProjectStatus,
+          tasks: newProjectTasks
         })
       })
 
       if (response.ok) {
         setNewProjectName('')
         setNewProjectDescription('')
+        setNewProjectStatus('')
+        setNewProjectTasks('')
         loadProjects()
       } else {
         const errorData = await response.json()
@@ -160,7 +166,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-2xl p-8 max-w-4xl w-full shadow-2xl border-2 border-purple-400">
+      <div className="bg-gray-800 rounded-2xl p-8 max-w-7xl w-full shadow-2xl border-2 border-purple-400">
         <div className="text-center mb-6">
           <div className="hexagon mx-auto mb-4 relative">
             <i className="fas fa-cog absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
@@ -169,14 +175,14 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
           <p className="text-purple-100">Manage projects and user assignments</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Projects Management */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Existing Projects */}
           <div className="bg-gray-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-white mb-4">
-              <i className="fas fa-project-diagram mr-2"></i>Projects
+              <i className="fas fa-list mr-2"></i>Existing Projects
             </h4>
             
-            <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-80 overflow-y-auto">
               {projects.map(project => (
                 <div key={project.id} className="bg-gray-600 p-3 rounded-lg">
                   <div className="font-semibold text-white">{project.name}</div>
@@ -184,6 +190,22 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                   <div className="text-xs text-gray-400">Status: {project.status}</div>
                 </div>
               ))}
+            </div>
+          </div>
+          
+          {/* Create New Project */}
+          <div className="bg-gray-700 rounded-xl p-6">
+            <h4 className="text-lg font-semibold text-white mb-4">
+              <i className="fas fa-plus-circle mr-2"></i>Create Project
+            </h4>
+            
+            <div className="bg-blue-900 bg-opacity-50 border border-blue-400 rounded-lg p-3 mb-4">
+              <div className="flex items-start">
+                <i className="fas fa-lightbulb text-blue-400 mt-1 mr-3"></i>
+                <div className="text-blue-100 text-sm">
+                  <strong>Pro Tip:</strong> Be as specific as possible! Detailed project information helps AI agents provide better assistance. Include concrete timelines, specific tasks, and clear goals.
+                </div>
+              </div>
             </div>
             
             <form onSubmit={createProject} className="space-y-3">
@@ -196,11 +218,28 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
                 required
               />
               <textarea
-                placeholder="Project description"
+                placeholder="Project description/goals"
                 value={newProjectDescription}
                 onChange={(e) => setNewProjectDescription(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
                 rows={2}
+                required
+              />
+              <textarea
+                placeholder="Current progress and timeline (updated daily)"
+                value={newProjectStatus}
+                onChange={(e) => setNewProjectStatus(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
+                rows={2}
+                required
+              />
+              <textarea
+                placeholder="Tasks that are ongoing or upcoming"
+                value={newProjectTasks}
+                onChange={(e) => setNewProjectTasks(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-gray-600 text-white border border-gray-500 focus:outline-none focus:border-purple-400 resize-none"
+                rows={2}
+                required
               />
               <button
                 type="submit"
@@ -213,7 +252,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onClose, token }) => {
             </form>
           </div>
           
-          {/* User Management */}
+          {/* User Assignments */}
           <div className="bg-gray-700 rounded-xl p-6">
             <h4 className="text-lg font-semibold text-white mb-4">
               <i className="fas fa-users mr-2"></i>User Assignments

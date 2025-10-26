@@ -263,22 +263,27 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
 
       <div className="flex h-screen">
         {/* Sidebar */}
-        <div className="w-80 bg-black/20 backdrop-blur-sm border-r border-yellow-400/30 p-4">
-          <h2 className="text-lg font-semibold text-white mb-4">
-            <i className="fas fa-project-diagram mr-2"></i>Projects
-          </h2>
+        <div className="w-80 bg-amber-900/80 backdrop-blur-sm border-r border-amber-600/50 p-4 shadow-lg">
+          <div className="flex items-center mb-6">
+            <div className="hexagon-small mr-3">
+              <i className="fas fa-project-diagram text-amber-200"></i>
+            </div>
+            <h2 className="text-lg font-semibold text-white">Projects</h2>
+          </div>
           
-          <div className="space-y-2 mb-6">
+          <div className="space-y-3 mb-6">
             {userProjects.map(project => (
               <button
                 key={project.id}
                 onClick={() => toggleProjectSelection(project.id)}
-                className={`w-full p-3 text-left rounded-full transition-all duration-300 project-button ${
-                  selectedProjects.has(project.id) ? 'selected' : ''
+                className={`w-full p-4 text-left rounded-xl transition-all duration-300 border-2 ${
+                  selectedProjects.has(project.id) 
+                    ? 'bg-amber-600 border-amber-400 text-white shadow-lg transform scale-105' 
+                    : 'bg-amber-800/50 border-amber-700/50 text-amber-100 hover:bg-amber-800/70 hover:border-amber-600/70'
                 }`}
               >
-                <div className="font-semibold">{project.name}</div>
-                <div className="text-sm opacity-75">{project.description}</div>
+                <div className="font-semibold text-sm mb-1">{project.name}</div>
+                <div className="text-xs opacity-80 leading-relaxed">{project.description}</div>
               </button>
             ))}
           </div>
@@ -287,7 +292,7 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
           {user.role === 'admin' && (
             <button
               onClick={onShowAdminConsole}
-              className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg border-2 border-purple-500/50"
             >
               <i className="fas fa-cog mr-2"></i>Admin Console
             </button>
