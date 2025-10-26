@@ -18,6 +18,10 @@ export class AgentManager {
     });
   }
 
+  getClient(): LettaClient {
+    return this.client;
+  }
+
   
 
   async createAgent(userId: string, agentData: {
@@ -37,9 +41,8 @@ export class AgentManager {
     // Create user memory block if it doesn't exist
     if (!userMemoryBlockId) {
       const userMemoryBlock = await this.client.blocks.create({
-        label: user.email || user.id,
+        label: "human",
         value: `User: ${user.name} (${user.email})\nDescription: ${user.description}`,
-        description: "Stores key details about the person you are conversing with, allowing for more personalized and friend-like conversation."
       });
       userMemoryBlockId = userMemoryBlock.id;
       

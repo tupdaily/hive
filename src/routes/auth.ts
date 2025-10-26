@@ -19,7 +19,7 @@ const questionnaireSchema = z.object({
   description: z.string().min(10, 'Please provide at least 10 characters describing your role and what you\'re working on')
 });
 
-export const createAuthRoutes = (authService: AuthService, db: any) => {
+export const createAuthRoutes = (authService: AuthService, db: any, agentManager: any) => {
   const router = Router();
 
   router.post('/register', async (req: Request, res: Response) => {
@@ -74,12 +74,31 @@ export const createAuthRoutes = (authService: AuthService, db: any) => {
         return res.status(401).json({ error: 'User not authenticated' });
       }
 
+      // Update user description in database
       await db.updateUserDescription(req.user.userId, description);
       
-      res.json({
-        message: 'Questionnaire submitted successfully',
-        description: description
-      });
+      // Create user's agent with human memory block
+      const user = await db.getUserById(req.user.userId);
+      if (user) {
+        try {
+          const agent = await agentManager.createAgent(req.user.userId, {
+            name: `${user.name}'s Assistant`,
+            personality: 'helpful',
+            description: description
+          });
+          
+          res.json({
+            message: 'Questionnaire submitted and agent created successfully',
+            description: description,
+            agent: agent
+          });
+        } catch (agentError) {
+          console.error('Failed to create agent:', agentError);
+          res.status(500).json({ error: 'Failed to create AI agent' });
+        }
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Invalid input', details: error.errors });

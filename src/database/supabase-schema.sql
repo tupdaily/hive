@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS memory_blocks (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_agents_user_id ON agents(user_id);
 CREATE INDEX IF NOT EXISTS idx_project_members_project_id ON project_members(project_id);
-CREATE INDEX IF NOT EXISTS idx_project_members_agent_id ON project_members(agent_id);
+CREATE INDEX IF NOT EXISTS idx_project_members_user_id ON project_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_memory_blocks_type ON memory_blocks(type);
 CREATE INDEX IF NOT EXISTS idx_memory_blocks_agent_id ON memory_blocks(agent_id);
 
