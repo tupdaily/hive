@@ -158,6 +158,29 @@ export class Database {
     };
   }
 
+  async getAgentByUserId(userId: string): Promise<Agent | null> {
+    await this.waitForInitialization();
+    const { data, error } = await this.supabase
+      .from('agents')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error || !data) return null;
+    
+    return {
+      id: data.id,
+      userId: data.user_id,
+      name: data.name,
+      personality: data.personality,
+      workPreferences: JSON.parse(data.work_preferences),
+      lettaAgentId: data.letta_agent_id,
+      isActive: Boolean(data.is_active),
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
+  }
+
   async getAgentsByUserId(userId: string): Promise<Agent[]> {
     await this.waitForInitialization();
     const { data, error } = await this.supabase
@@ -442,10 +465,11 @@ export class Database {
     await this.waitForInitialization();
     const { error } = await this.supabase
       .from('project_members')
-      .insert({
+      .upsert({
         user_id: userId,
-        project_id: projectId,
-        created_at: new Date().toISOString()
+        project_id: projectId
+      }, {
+        onConflict: 'user_id,project_id'
       });
 
     if (error) throw error;
