@@ -239,26 +239,86 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
     <div className="min-h-screen honeycomb-bg honeycomb-pattern relative overflow-hidden">
       {/* Floating Honeycombs Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="hexagon honeycomb-float absolute top-20 left-10 honeycomb-pulse" style={{animationDelay: '0s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-40 right-20 honeycomb-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-40 left-20 honeycomb-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-20 right-10 honeycomb-pulse" style={{animationDelay: '3s'}}></div>
-        <div className="hexagon honeycomb-float absolute top-60 left-1/2 honeycomb-pulse" style={{animationDelay: '4s'}}></div>
-        <div className="hexagon honeycomb-float absolute bottom-60 right-1/3 honeycomb-pulse" style={{animationDelay: '5s'}}></div>
+        {/* Top Row */}
+        <div className="hexagon honeycomb-float absolute top-8 left-4 honeycomb-pulse" style={{animationDelay: '0s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-8 left-1/4 honeycomb-pulse" style={{animationDelay: '0.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-8 left-1/2 honeycomb-pulse" style={{animationDelay: '0.6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-8 left-3/4 honeycomb-pulse" style={{animationDelay: '0.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-8 right-4 honeycomb-pulse" style={{animationDelay: '1.2s'}}></div>
+        
+        {/* Second Row */}
+        <div className="hexagon honeycomb-float absolute top-24 left-8 honeycomb-pulse" style={{animationDelay: '1.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-24 left-1/3 honeycomb-pulse" style={{animationDelay: '1.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-24 left-2/3 honeycomb-pulse" style={{animationDelay: '2.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-24 right-8 honeycomb-pulse" style={{animationDelay: '2.4s'}}></div>
+        
+        {/* Third Row */}
+        <div className="hexagon honeycomb-float absolute top-40 left-12 honeycomb-pulse" style={{animationDelay: '2.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 left-1/5 honeycomb-pulse" style={{animationDelay: '3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 left-2/5 honeycomb-pulse" style={{animationDelay: '3.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 left-3/5 honeycomb-pulse" style={{animationDelay: '3.6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 left-4/5 honeycomb-pulse" style={{animationDelay: '3.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-40 right-12 honeycomb-pulse" style={{animationDelay: '4.2s'}}></div>
+        
+        {/* Middle Top */}
+        <div className="hexagon honeycomb-float absolute top-1/3 left-6 honeycomb-pulse" style={{animationDelay: '4.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 left-1/6 honeycomb-pulse" style={{animationDelay: '4.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 left-1/3 honeycomb-pulse" style={{animationDelay: '5.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 left-1/2 honeycomb-pulse" style={{animationDelay: '5.4s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 left-2/3 honeycomb-pulse" style={{animationDelay: '5.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 left-5/6 honeycomb-pulse" style={{animationDelay: '6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/3 right-6 honeycomb-pulse" style={{animationDelay: '6.3s'}}></div>
+        
+        {/* Center */}
+        <div className="hexagon honeycomb-float absolute top-1/2 left-10 honeycomb-pulse" style={{animationDelay: '6.6s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/2 left-1/8 honeycomb-pulse" style={{animationDelay: '6.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/2 left-3/8 honeycomb-pulse" style={{animationDelay: '7.2s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/2 left-5/8 honeycomb-pulse" style={{animationDelay: '7.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/2 left-7/8 honeycomb-pulse" style={{animationDelay: '7.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-1/2 right-10 honeycomb-pulse" style={{animationDelay: '8.1s'}}></div>
+        
+        {/* Middle Bottom */}
+        <div className="hexagon honeycomb-float absolute top-2/3 left-8 honeycomb-pulse" style={{animationDelay: '8.4s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-2/3 left-1/4 honeycomb-pulse" style={{animationDelay: '8.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-2/3 left-1/2 honeycomb-pulse" style={{animationDelay: '9s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-2/3 left-3/4 honeycomb-pulse" style={{animationDelay: '9.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute top-2/3 right-8 honeycomb-pulse" style={{animationDelay: '9.6s'}}></div>
+        
+        {/* Bottom Rows */}
+        <div className="hexagon honeycomb-float absolute bottom-32 left-4 honeycomb-pulse" style={{animationDelay: '9.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-32 left-1/3 honeycomb-pulse" style={{animationDelay: '10.2s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-32 left-2/3 honeycomb-pulse" style={{animationDelay: '10.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-32 right-4 honeycomb-pulse" style={{animationDelay: '10.8s'}}></div>
+        
+        <div className="hexagon honeycomb-float absolute bottom-16 left-8 honeycomb-pulse" style={{animationDelay: '11.1s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-16 left-1/5 honeycomb-pulse" style={{animationDelay: '11.4s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-16 left-2/5 honeycomb-pulse" style={{animationDelay: '11.7s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-16 left-3/5 honeycomb-pulse" style={{animationDelay: '12s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-16 left-4/5 honeycomb-pulse" style={{animationDelay: '12.3s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-16 right-8 honeycomb-pulse" style={{animationDelay: '12.6s'}}></div>
+        
+        <div className="hexagon honeycomb-float absolute bottom-4 left-12 honeycomb-pulse" style={{animationDelay: '12.9s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-4 left-1/4 honeycomb-pulse" style={{animationDelay: '13.2s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-4 left-1/2 honeycomb-pulse" style={{animationDelay: '13.5s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-4 left-3/4 honeycomb-pulse" style={{animationDelay: '13.8s'}}></div>
+        <div className="hexagon honeycomb-float absolute bottom-4 right-12 honeycomb-pulse" style={{animationDelay: '14.1s'}}></div>
       </div>
 
       <div className="flex h-screen">
-        {/* Black Sidebar - Full Height */}
-        <div className="w-80 min-w-80 max-w-80 bg-amber-900 border-r border-amber-600 flex flex-col relative z-10">
+        {/* Gray Sidebar - Full Height */}
+        <div 
+          className="w-80 min-w-80 max-w-80 border-r border-gray-700 flex flex-col relative z-10"
+          style={{ backgroundColor: '#374151' }}
+        >
           {/* Logo Section - Top */}
-          <div className="p-4 border-b border-amber-600">
+          <div className="p-4 border-b border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="hexagon">
                 <i className="fas fa-bee absolute inset-0 flex items-center justify-center text-white text-xl"></i>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Hive AI</h1>
-                <p className="text-amber-100 text-sm">Welcome, {user.name}</p>
+                <h1 className="text-2xl font-bold text-white">Hive AI</h1>
+                    <p className="text-gray-200 text-base">Welcome, {user.name}</p>
               </div>
             </div>
           </div>
@@ -288,7 +348,7 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
             {user.role === 'admin' && (
               <button
                 onClick={onShowAdminConsole}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105 mb-4"
+                    className="w-full bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105 mb-4"
               >
                 <i className="fas fa-cog mr-2"></i>Admin Console
               </button>
@@ -296,7 +356,7 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
           </div>
 
           {/* Logout Button - Bottom */}
-          <div className="p-4 border-t border-amber-600">
+          <div className="p-4 border-t border-gray-700">
             <button 
               onClick={onLogout}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-full transition-all duration-300"
@@ -311,24 +371,24 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
           {/* Chat Messages */}
           <div 
             id="chat-messages" 
-            className="flex-1 overflow-y-auto p-4 space-y-4"
+            className="flex-1 overflow-y-auto px-8 py-6 space-y-4"
           >
             {messages.length === 0 && (
               <div className="text-center text-white/70 mt-20">
                 <div className="hexagon mx-auto mb-4">
                   <i className="fas fa-comments absolute inset-0 flex items-center justify-center text-white text-2xl"></i>
                 </div>
-                <p className="text-xl">Start a conversation with your AI assistant!</p>
+                <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">Talk to the Hive</p>
               </div>
             )}
             
             {messages.map(message => (
               <div
                 key={message.id}
-                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} mx-8`}
               >
                 <div
-                  className={`max-w-2xl lg:max-w-4xl px-6 py-4 rounded-2xl chat-bubble ${
+                  className={`max-w-2xl lg:max-w-4xl px-6 py-4 rounded-2xl chat-bubble mx-4 ${
                     message.isUser 
                       ? 'bg-yellow-400 text-gray-800' 
                       : 'bg-white/90 text-gray-800'
@@ -343,8 +403,8 @@ const ChatbotInterface: React.FC<ChatbotInterfaceProps> = ({
             ))}
             
             {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white/90 text-gray-800 px-6 py-4 rounded-2xl max-w-2xl lg:max-w-4xl">
+              <div className="flex justify-start mx-8">
+                <div className="bg-white/90 text-gray-800 px-6 py-4 rounded-2xl max-w-2xl lg:max-w-4xl mx-4">
                   <div className="flex items-center space-x-3">
                     <div className="flex space-x-1">
                       <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce"></div>
